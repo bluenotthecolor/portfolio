@@ -77,11 +77,7 @@ http://localhost:8000
 
 ```
 .
-├── assets/
-├── css/
-├── js/
 ├── preview.png
-├── favicon.ico
 ├── index.html
 └── README.md
 ```
