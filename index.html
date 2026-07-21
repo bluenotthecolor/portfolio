@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f3f3f1" />
+    <title>~$</title>
+    <style>
+      :root {
+        --bg: #f3f3f1;
+        --card: #fdfdfc;
+        --ink: #1c1c1a;
+        --accent: #2f7a5c;
+        --dim: #8c8c86;
+        --line: #dcdcd6;
+        --mono:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, "Courier New",
+          monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: var(--bg);
+        overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+
+      body {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        cursor: none;
+        /* iOS/Android safe areas (notches, home indicator) */
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+
+      /* Only fine-pointer (mouse/trackpad) devices get the faux cursor */
+      @media (hover: none), (pointer: coarse) {
+        body {
+          cursor: auto;
+        }
+        .cursor-box,
+        .cursor-caret {
+          display: none !important;
+        }
+      }
+
+      /* ---------- Background texture ---------- */
+      .dotgrid {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.045) 1px, transparent 1px);
+        background-size: 32px 32px;
+      }
+
+      .grain {
+        position: fixed;
+        inset: -50px;
+        z-index: 1;
+        pointer-events: none;
+        opacity: 0.03;
+        mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      /* ---------- Cursor: precise dot + smooth trailing ring ---------- */
+      .cursor-caret {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        pointer-events: none;
+        z-index: 8;
+        transform: translate(-50%, -50%) scale(1);
+        transition:
+          transform 0.15s ease,
+          opacity 0.15s ease;
+      }
+
+      .cursor-caret.active {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0.6;
+      }
+
+      .cursor-box {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(28, 28, 26, 0.28);
+        pointer-events: none;
+        z-index: 7;
+        transform: translate(-50%, -50%) scale(1);
+        transition:
+          width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          border-color 0.25s ease,
+          background-color 0.25s ease,
+          opacity 0.2s ease;
+      }
+
+      .cursor-box.hover {
+        width: 56px;
+        height: 56px;
+        border-color: rgba(47, 122, 92, 0.55);
+        background-color: rgba(47, 122, 92, 0.06);
+      }
+
+      .cursor-box.active {
+        width: 22px;
+        height: 22px;
+        border-color: rgba(47, 122, 92, 0.9);
+      }
+
+      .ripple {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid rgba(47, 122, 92, 0.5);
+        pointer-events: none;
+        z-index: 8;
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.8;
+        transition:
+          transform 0.5s ease-out,
+          opacity 0.5s ease-out;
+      }
+
+      #phrase {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4em;
+        max-width: 92vw;
+      }
+
+      .subtitle {
+        position: relative;
+        z-index: 3;
+        margin: 0.9rem 0 0;
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        letter-spacing: 0.02em;
+        color: var(--dim);
+        text-align: center;
+        max-width: 90vw;
+        user-select: none;
+      }
+
+      .line {
+        display: flex;
+        justify-content: center;
+        flex-wrap: nowrap;
+      }
+
+      .letter {
+        display: inline-block;
+        font-size: clamp(1.5rem, 9vw, 3.2rem);
+        color: var(--ink);
+        cursor: grab;
+        will-change: transform;
+        transition: color 0.15s ease;
+        touch-action: none;
+      }
+
+      /* Tablet / small-desktop step so it doesn't get oversized */
+      @media (min-width: 480px) {
+        .letter {
+          font-size: clamp(1.8rem, 6vw, 3.2rem);
+        }
+      }
+
+      .letter.space {
+        width: 0.5em;
+        cursor: default;
+      }
+      .letter.punct {
+        color: var(--dim);
+      }
+
+      .letter.pop {
+        color: var(--accent);
+      }
+
+      .letter.dragging {
+        color: var(--accent);
+        cursor: grabbing;
+      }
+
+      .controls {
+        position: fixed;
+        bottom: calc(2.2rem + env(safe-area-inset-bottom));
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 1.2rem 1.4rem;
+        padding: 0 1rem;
+        z-index: 5;
+      }
+
+      .controls button {
+        background: none;
+        border: none;
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.01em;
+        color: var(--dim);
+        cursor: pointer;
+        padding: 0.5rem 0.2rem;
+        border-bottom: 1px solid transparent;
+        transition:
+          color 0.2s ease,
+          border-color 0.2s ease;
+        white-space: nowrap;
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .controls button::before {
+        content: "$ ";
+        color: var(--accent);
+        opacity: 0.7;
+      }
+
+      .controls button:hover,
+      .controls button:focus-visible {
+        color: var(--ink);
+        border-color: var(--dim);
+      }
+
+      @media (max-width: 420px) {
+        .controls {
+          gap: 0.9rem 1rem;
+          bottom: calc(1.6rem + env(safe-area-inset-bottom));
+        }
+        .controls button {
+          font-size: 0.66rem;
+        }
+      }
+
+      footer {
+        position: fixed;
+        top: calc(1.6rem + env(safe-area-inset-top));
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        color: var(--dim);
+        z-index: 5;
+        padding: 0 1rem;
+      }
+
+      @media (hover: none), (pointer: coarse) {
+        footer {
+          font-size: 0.66rem;
+        }
+      }
+
+      /* ---------- Modal ---------- */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9;
+        background: rgba(20, 20, 18, 0.18);
+        backdrop-filter: blur(3px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        touch-action: none;
+        padding: 1rem;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .modal-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0;
+        max-width: 420px;
+        width: 100%;
+        max-height: 86vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.14);
+        transform: translateY(10px) scale(0.98);
+        transition: transform 0.25s ease;
+        position: relative;
+        cursor: default;
+        font-family: var(--mono);
+        touch-action: pan-y;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      .modal-overlay.active .modal-card {
+        transform: translateY(0) scale(1);
+      }
+
+      .modal-titlebar {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.6rem 0.8rem;
+        background: #ececea;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.7rem;
+        color: var(--dim);
+      }
+
+      .modal-titlebar .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #d9d5cf;
+      }
+
+      .modal-body {
+        padding: 1.8rem 1.8rem 2rem;
+      }
+
+      .modal-body .comment {
+        color: var(--dim);
+        font-size: 0.78rem;
+        margin: 0 0 0.9rem;
+      }
+
+      .modal-body .line1 {
+        margin: 0;
+        font-size: 0.86rem;
+        line-height: 1.7;
+        word-break: break-word;
+      }
+      .modal-body .kw {
+        color: #5a5ad6;
+      }
+      .modal-body .str {
+        color: var(--accent);
+      }
+      .modal-body .fn {
+        color: #b5566a;
+      }
+
+      .modal-links {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        margin-top: 1.2rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+      }
+
+      .modal-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.78rem;
+        color: var(--ink);
+        text-decoration: none;
+        width: fit-content;
+        padding: 0.15rem 0;
+        border-bottom: 1px solid transparent;
+        transition:
+          color 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .modal-link svg {
+        flex-shrink: 0;
+        color: var(--dim);
+        transition: color 0.2s ease;
+      }
+
+      .modal-link:hover,
+      .modal-link:focus-visible {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .modal-link:hover svg,
+      .modal-link:focus-visible svg {
+        color: var(--accent);
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 0.4rem;
+        right: 0.6rem;
+        background: none;
+        border: none;
+        font-size: 1.4rem;
+        line-height: 1;
+        color: var(--dim);
+        cursor: pointer;
+        padding: 0.5rem;
+        touch-action: manipulation;
+      }
+
+      .modal-close:hover {
+        color: var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dotgrid"></div>
+    <div class="grain"></div>
+    <canvas id="trail"></canvas>
+
+    <div class="cursor-box" id="ring"></div>
+    <div class="cursor-caret" id="dot"></div>
+
+    <footer>// drag a letter · tap for a note</footer>
+
+    <div id="phrase"></div>
+    <p class="subtitle">
+      lana backwards is what i did with your mom last night
+    </p>
+
+    <div class="controls">
+      <button id="gravityBtn">git push --force</button>
+      <button id="shuffleBtn">rm -rf *</button>
+      <button id="noteBtn">cat readme.md</button>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-card">
+        <div class="modal-titlebar">
+          <span class="dot"></span>
+          <span>readme.md</span>
+        </div>
+        <button class="modal-close" id="modalClose" aria-label="Close">
+          &times;
+        </button>
+        <div class="modal-body">
+          <p class="comment">// a note from the build</p>
+          <p class="line1">
+            <span class="kw">const</span> me =
+            <span class="str">"full-stack developer"</span>;
+          </p>
+          <p class="line1"><span class="fn">console</span>.log(me);</p>
+          <p class="comment" style="margin-top: 1rem">
+            No framework. No dependencies. Just DOM, canvas, and a little
+            physics — built the way a lot of good side projects start.
+          </p>
+          <div class="modal-links">
+            <a
+              class="modal-link"
+              href="https://github.com/bluenotthecolor"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <svg
+                viewBox="0 0 16 16"
+                width="15"
+                height="15"
+                aria-hidden="true"
+              >
+                <path
+                  fill="currentColor"
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+                  0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+                  -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07
+                  -1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12
+                  0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27
+                  1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
+                  0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01
+                  2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"
+                />
+              </svg>
+              <span>github.com/bluenotthecolor</span>
+            </a>
+            <a
+              class="modal-link"
+              href="https://discord.com/users/1244917548898717779"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <svg
+                viewBox="0 0 16 16"
+                width="15"
+                height="15"
+                aria-hidden="true"
+              >
+                <path
+                  fill="currentColor"
+                  d="M13.55 2.9A13.4 13.4 0 0 0 10.4 1.9c-.15.27-.31.62-.42.9a12.4 12.4 0 0 0-3.96 0
+                  c-.12-.28-.28-.63-.43-.9A13.3 13.3 0 0 0 2.45 2.9C.6 5.66.09 8.35.34 11
+                  a13.5 13.5 0 0 0 4.06 2.05c.33-.44.62-.92.86-1.42-.47-.18-.92-.4-1.35-.66
+                  .11-.08.22-.17.33-.25a9.6 9.6 0 0 0 8.14 0c.11.08.22.17.33.25
+                  -.43.26-.88.48-1.35.66.24.5.53.98.86 1.42A13.5 13.5 0 0 0 15.66 11
+                  c.3-3.08-.5-5.75-2.11-8.1ZM5.68 9.4c-.61 0-1.11-.56-1.11-1.24
+                  0-.68.49-1.24 1.11-1.24.63 0 1.13.57 1.12 1.24 0 .68-.49 1.24-1.12 1.24Zm4.64 0
+                  c-.61 0-1.11-.56-1.11-1.24 0-.68.49-1.24 1.11-1.24.63 0 1.13.57 1.12 1.24
+                  0 .68-.49 1.24-1.12 1.24Z"
+                />
+              </svg>
+              <span>discord</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const isCoarsePointer = window.matchMedia(
+        "(hover: none), (pointer: coarse)",
+      ).matches;
+
+      const lines = ["lana", "developer"];
+      const phraseEl = document.getElementById("phrase");
+
+      const letters = [];
+      lines.forEach((lineText) => {
+        const lineEl = document.createElement("div");
+        lineEl.className = "line";
+        phraseEl.appendChild(lineEl);
+        [...lineText].forEach((ch) => {
+          const span = document.createElement("span");
+          span.textContent = ch === " " ? "\u00A0" : ch;
+          span.className = "letter" + (ch === " " ? " space" : "");
+          lineEl.appendChild(span);
+          letters.push({ el: span, isSpace: ch === " " });
+        });
+      });
+
+      let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      let gravityOn = false;
+
+      function measure() {
+        letters.forEach((l) => {
+          const r = l.el.getBoundingClientRect();
+          l.home = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+          l.w = r.width;
+          l.h = r.height;
+          if (l.dx === undefined) {
+            l.dx = 0;
+            l.dy = 0;
+            l.vx = 0;
+            l.vy = 0;
+          }
+        });
+      }
+      measure();
+
+      let resizeTimer = null;
+      function handleResize() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          measure();
+          resizeCanvas();
+        }, 80);
+      }
+      window.addEventListener("resize", handleResize);
+      window.addEventListener("orientationchange", handleResize);
+
+      // ---------- Cursor (skipped entirely on touch devices) ----------
+      const dot = document.getElementById("dot");
+      const ring = document.getElementById("ring");
+      let ringPos = { x: mouse.x, y: mouse.y };
+
+      if (!isCoarsePointer) {
+        window.addEventListener("pointermove", (e) => {
+          if (e.pointerType && e.pointerType !== "mouse") return;
+          dot.style.left = e.clientX + "px";
+          dot.style.top = e.clientY + "px";
+        });
+
+        document
+          .querySelectorAll(
+            ".letter:not(.space), .controls button, .modal-close, a",
+          )
+          .forEach((el) => {
+            el.addEventListener("pointerenter", (e) => {
+              if (e.pointerType === "mouse") ring.classList.add("hover");
+            });
+            el.addEventListener("pointerleave", (e) => {
+              if (e.pointerType === "mouse") ring.classList.remove("hover");
+            });
+          });
+
+        window.addEventListener("pointerdown", (e) => {
+          if (e.pointerType === "mouse") {
+            ring.classList.add("active");
+            dot.classList.add("active");
+          }
+        });
+        window.addEventListener("pointerup", () => {
+          ring.classList.remove("active");
+          dot.classList.remove("active");
+        });
+      }
+
+      // Track pointer position for the physics repel effect (all pointer types)
+      window.addEventListener(
+        "pointermove",
+        (e) => {
+          mouse.x = e.clientX;
+          mouse.y = e.clientY;
+        },
+        { passive: true },
+      );
+      window.addEventListener("pointerleave", () => {
+        mouse.x = -9999;
+        mouse.y = -9999;
+      });
+      window.addEventListener("pointercancel", () => {
+        mouse.x = -9999;
+        mouse.y = -9999;
+      });
+
+      function spawnRipple(x, y) {
+        const r = document.createElement("div");
+        r.className = "ripple";
+        r.style.left = x + "px";
+        r.style.top = y + "px";
+        document.body.appendChild(r);
+        requestAnimationFrame(() => {
+          r.style.transform = "translate(-50%, -50%) scale(2.6)";
+          r.style.opacity = "0";
+        });
+        setTimeout(() => r.remove(), 500);
+      }
+
+      // ---------- Minimal pixel trail ----------
+      const trailCanvas = document.getElementById("trail");
+      const trailCtx = trailCanvas.getContext("2d");
+      let W, H, DPR;
+      function resizeCanvas() {
+        DPR = Math.min(window.devicePixelRatio || 1, 2);
+        W = window.innerWidth;
+        H = window.innerHeight;
+        trailCanvas.width = W * DPR;
+        trailCanvas.height = H * DPR;
+        trailCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      }
+      resizeCanvas();
+
+      const trailParticles = [];
+      const MAX_TRAIL = isCoarsePointer ? 60 : 200;
+      let lastTX = null,
+        lastTY = null;
+      window.addEventListener(
+        "pointermove",
+        (e) => {
+          const x = e.clientX,
+            y = e.clientY;
+          if (lastTX !== null) {
+            const dist = Math.hypot(x - lastTX, y - lastTY);
+            if (
+              dist > 5 &&
+              Math.random() < 0.6 &&
+              trailParticles.length < MAX_TRAIL
+            ) {
+              trailParticles.push({
+                x,
+                y,
+                vx: (Math.random() - 0.5) * 0.15,
+                vy: (Math.random() - 0.5) * 0.15,
+                life: 1,
+                size: Math.random() * 2 + 2,
+              });
+            }
+          }
+          lastTX = x;
+          lastTY = y;
+        },
+        { passive: true },
+      );
+
+      function drawTrail() {
+        trailCtx.clearRect(0, 0, W, H);
+        for (let i = trailParticles.length - 1; i >= 0; i--) {
+          const p = trailParticles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.04;
+          if (p.life <= 0) {
+            trailParticles.splice(i, 1);
+            continue;
+          }
+          trailCtx.fillStyle = `rgba(47,122,92,${p.life * 0.35})`;
+          const s = p.size * p.life;
+          trailCtx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+        }
+      }
+
+      // ---------- Sound (8-bit blip) ----------
+      let audioCtx = null;
+      function getAudioCtx() {
+        if (!audioCtx)
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        return audioCtx;
+      }
+      const scale = [
+        261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25, 783.99,
+        880.0, 1046.5,
+      ];
+
+      function pluck(freq) {
+        try {
+          const ac = getAudioCtx();
+          const now = ac.currentTime;
+          const osc = ac.createOscillator();
+          const gain = ac.createGain();
+          osc.type = "square";
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.22, now + 0.005);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+          osc.connect(gain);
+          gain.connect(ac.destination);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        } catch (err) {
+          /* audio not available (autoplay policies, etc.) — fail silently */
+        }
+      }
+
+      function popLetter(l, index, withImpulse) {
+        if (l.isSpace) return;
+        pluck(scale[index % scale.length]);
+        l.el.classList.add("pop");
+        setTimeout(() => l.el.classList.remove("pop"), 200);
+        if (withImpulse) {
+          l.vx += (Math.random() - 0.5) * 6;
+          l.vy -= Math.random() * 5 + 2;
+        }
+      }
+
+      // ---------- Drag & fling ----------
+      let dragging = null;
+      let dragOffset = { x: 0, y: 0 };
+      let lastDragPos = null;
+      let dragPointerId = null;
+
+      // Radius for picking up a letter — a bit larger on touch for fat fingers
+      const PICK_RADIUS = isCoarsePointer ? 46 : 60;
+
+      function findNearest(x, y, radius) {
+        let nearest = null,
+          nearestDist = Infinity,
+          nearestIndex = -1;
+        letters.forEach((l, i) => {
+          if (l.isSpace) return;
+          const ax = l.home.x + l.dx,
+            ay = l.home.y + l.dy;
+          const d = Math.hypot(x - ax, y - ay);
+          if (d < nearestDist) {
+            nearestDist = d;
+            nearest = l;
+            nearestIndex = i;
+          }
+        });
+        if (nearest && nearestDist < radius)
+          return { l: nearest, i: nearestIndex };
+        return null;
+      }
+
+      window.addEventListener(
+        "pointerdown",
+        (e) => {
+          if (e.target.closest(".modal-card") || e.target.closest(".controls"))
+            return;
+
+          spawnRipple(e.clientX, e.clientY);
+          const found = findNearest(e.clientX, e.clientY, PICK_RADIUS);
+          if (found) {
+            e.preventDefault();
+            dragging = found.l;
+            dragPointerId = e.pointerId;
+            if (dragging.el.setPointerCapture) {
+              try {
+                dragging.el.setPointerCapture(e.pointerId);
+              } catch (err) {}
+            }
+            dragging.el.classList.add("dragging");
+            const curX = dragging.home.x + dragging.dx;
+            const curY = dragging.home.y + dragging.dy;
+            dragOffset.x = curX - e.clientX;
+            dragOffset.y = curY - e.clientY;
+            lastDragPos = {
+              x: e.clientX,
+              y: e.clientY,
+              t: performance.now(),
+            };
+            popLetter(found.l, found.i, false);
+          }
+        },
+        { passive: false },
+      );
+
+      window.addEventListener(
+        "pointermove",
+        (e) => {
+          if (
+            dragging &&
+            (dragPointerId === null || e.pointerId === dragPointerId)
+          ) {
+            e.preventDefault();
+            const targetX = e.clientX + dragOffset.x;
+            const targetY = e.clientY + dragOffset.y;
+            dragging.dx = targetX - dragging.home.x;
+            dragging.dy = targetY - dragging.home.y;
+
+            const now = performance.now();
+            const dt = Math.max(now - lastDragPos.t, 1);
+            dragging.vx = ((e.clientX - lastDragPos.x) / dt) * 16;
+            dragging.vy = ((e.clientY - lastDragPos.y) / dt) * 16;
+            lastDragPos = { x: e.clientX, y: e.clientY, t: now };
+          }
+        },
+        { passive: false },
+      );
+
+      function endDrag() {
+        if (dragging) {
+          dragging.el.classList.remove("dragging");
+          dragging = null;
+          dragPointerId = null;
+        }
+      }
+      window.addEventListener("pointerup", endDrag);
+      window.addEventListener("pointercancel", endDrag);
+
+      // ---------- Buttons ----------
+      const gravityBtn = document.getElementById("gravityBtn");
+      gravityBtn.addEventListener("click", () => {
+        gravityOn = !gravityOn;
+        gravityBtn.textContent = gravityOn ? "git revert" : "git push --force";
+      });
+
+      const shuffleBtn = document.getElementById("shuffleBtn");
+      shuffleBtn.addEventListener("click", () => {
+        letters.forEach((l, i) => {
+          if (l.isSpace) return;
+          l.vx += (Math.random() - 0.5) * 14;
+          l.vy += (Math.random() - 0.5) * 14 - 4;
+          setTimeout(() => popLetter(l, i, false), i * 35);
+        });
+      });
+
+      // ---------- Modal ----------
+      const modalOverlay = document.getElementById("modalOverlay");
+      const noteBtn = document.getElementById("noteBtn");
+      const modalClose = document.getElementById("modalClose");
+
+      function openModal() {
+        modalOverlay.classList.add("active");
+      }
+      function closeModal() {
+        modalOverlay.classList.remove("active");
+      }
+
+      noteBtn.addEventListener("click", openModal);
+      modalClose.addEventListener("click", closeModal);
+      modalOverlay.addEventListener("click", (e) => {
+        if (e.target === modalOverlay) closeModal();
+      });
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeModal();
+      });
+
+      // ---------- Physics loop ----------
+      const REPEL_RADIUS = isCoarsePointer ? 70 : 90;
+      const REPEL_STRENGTH = 900;
+      const SPRING_K = 0.06;
+      const DAMPING = 0.86;
+      const GRAVITY = 0.55;
+
+      function tick() {
+        const floorY = window.innerHeight - 40;
+
+        letters.forEach((l) => {
+          if (l.isSpace || l === dragging) return;
+
+          const curX = l.home.x + l.dx;
+          const curY = l.home.y + l.dy;
+
+          let ax = 0,
+            ay = 0;
+
+          if (gravityOn) {
+            ay += GRAVITY;
+          } else {
+            ax += -SPRING_K * l.dx;
+            ay += -SPRING_K * l.dy;
+          }
+
+          const mdx = curX - mouse.x;
+          const mdy = curY - mouse.y;
+          const dist = Math.hypot(mdx, mdy);
+          if (dist < REPEL_RADIUS && dist > 0.01) {
+            const force =
+              ((1 - dist / REPEL_RADIUS) * REPEL_STRENGTH) / (dist * 10);
+            ax += (mdx / dist) * force;
+            ay += (mdy / dist) * force;
+          }
+
+          l.vx = (l.vx + ax) * DAMPING;
+          l.vy = (l.vy + ay) * DAMPING;
+
+          l.dx += l.vx;
+          l.dy += l.vy;
+
+          if (gravityOn) {
+            const bottomLimit = floorY - l.home.y;
+            if (l.dy > bottomLimit) {
+              l.dy = bottomLimit;
+              l.vy *= -0.35;
+              l.vx *= 0.7;
+            }
+            const leftLimit = 20 - l.home.x;
+            const rightLimit = window.innerWidth - 20 - l.home.x;
+            if (l.dx < leftLimit) {
+              l.dx = leftLimit;
+              l.vx *= -0.4;
+            }
+            if (l.dx > rightLimit) {
+              l.dx = rightLimit;
+              l.vx *= -0.4;
+            }
+          }
+
+          l.el.style.transform = `translate(${l.dx}px, ${l.dy}px)`;
+        });
+
+        if (dragging) {
+          dragging.el.style.transform = `translate(${dragging.dx}px, ${dragging.dy}px)`;
+        }
+
+        if (!isCoarsePointer) {
+          ringPos.x += (mouse.x - ringPos.x) * 0.18;
+          ringPos.y += (mouse.y - ringPos.y) * 0.18;
+          ring.style.left = ringPos.x + "px";
+          ring.style.top = ringPos.y + "px";
+        }
+
+        drawTrail();
+
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    </script>
+  </body>
+</html>
