@@ -128,6 +128,71 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
       }
 
+      /* ---------- CRT scanlines + flicker (atmosphere only) ---------- */
+      .scanlines {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.035) 0px,
+          rgba(0, 0, 0, 0.035) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+        mix-blend-mode: multiply;
+        animation: scanlineDrift 9s linear infinite;
+      }
+
+      @keyframes scanlineDrift {
+        from {
+          background-position: 0 0;
+        }
+        to {
+          background-position: 0 120px;
+        }
+      }
+
+      .crt-flicker {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background: rgba(0, 0, 0, 0.025);
+        opacity: 0;
+        animation: crtFlicker 7s infinite;
+      }
+
+      @keyframes crtFlicker {
+        0%,
+        95%,
+        100% {
+          opacity: 0;
+        }
+        96% {
+          opacity: 1;
+        }
+        96.5% {
+          opacity: 0.15;
+        }
+        97% {
+          opacity: 0.7;
+        }
+        97.5% {
+          opacity: 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .scanlines {
+          animation: none;
+        }
+        .crt-flicker {
+          display: none;
+        }
+      }
+
       canvas {
         position: fixed;
         top: 0;
@@ -359,7 +424,10 @@
         pointer-events: none;
         transition: opacity 0.25s ease;
         touch-action: none;
-        padding: 1rem;
+        padding: calc(1rem + env(safe-area-inset-top))
+          calc(1rem + env(safe-area-inset-right))
+          calc(1rem + env(safe-area-inset-bottom))
+          calc(1rem + env(safe-area-inset-left));
       }
 
       .modal-overlay.active {
@@ -444,6 +512,13 @@
         border-top: 1px solid var(--line);
       }
 
+      .modal-link-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
       .modal-link {
         display: inline-flex;
         align-items: center;
@@ -457,6 +532,13 @@
         transition:
           color 0.2s ease,
           border-color 0.2s ease;
+        min-width: 0;
+      }
+
+      .modal-link span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .modal-link svg {
@@ -476,6 +558,90 @@
         color: var(--accent);
       }
 
+      .copy-btn {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 4px;
+        border: none;
+        background: none;
+        color: var(--dim);
+        cursor: pointer;
+        padding: 0;
+        touch-action: manipulation;
+        transition:
+          color 0.2s ease,
+          background-color 0.2s ease;
+        position: relative;
+      }
+
+      .copy-btn:hover,
+      .copy-btn:focus-visible {
+        color: var(--accent);
+        background-color: rgba(47, 122, 92, 0.08);
+      }
+
+      .copy-btn svg {
+        width: 13px;
+        height: 13px;
+      }
+
+      .copy-btn .copy-icon,
+      .copy-btn .check-icon {
+        position: absolute;
+        transition:
+          opacity 0.15s ease,
+          transform 0.15s ease;
+      }
+
+      .copy-btn .check-icon {
+        opacity: 0;
+        transform: scale(0.6);
+        color: var(--accent);
+      }
+
+      .copy-btn.copied .copy-icon {
+        opacity: 0;
+        transform: scale(0.6);
+      }
+
+      .copy-btn.copied .check-icon {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .copy-btn.copied {
+        color: var(--accent);
+      }
+
+      .copy-toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(2.2rem + env(safe-area-inset-bottom) + 4.4rem);
+        transform: translateX(-50%) translateY(6px);
+        background: var(--ink);
+        color: var(--bg);
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        padding: 0.4rem 0.7rem;
+        border-radius: 4px;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 10;
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
+        white-space: nowrap;
+      }
+
+      .copy-toast.visible {
+        opacity: 0.92;
+        transform: translateX(-50%) translateY(0);
+      }
+
       .modal-close {
         position: absolute;
         top: 0.4rem;
@@ -493,11 +659,105 @@
       .modal-close:hover {
         color: var(--ink);
       }
+
+      /* ---------- Interactive terminal ---------- */
+      .terminal-card {
+        max-width: 480px;
+      }
+
+      .terminal-body {
+        display: flex;
+        flex-direction: column;
+        height: min(420px, 60vh);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+
+      .term-output {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem 1.2rem 0.6rem;
+        color: var(--ink);
+        line-height: 1.6;
+      }
+
+      .term-out-line {
+        margin: 0 0 0.55rem;
+        word-break: break-word;
+        white-space: pre-wrap;
+      }
+
+      .term-out-line.term-cmd-echo {
+        color: var(--dim);
+      }
+
+      .term-out-line.term-cmd-echo::before {
+        content: "$ ";
+        color: var(--accent);
+        font-weight: bold;
+      }
+
+      .term-out-accent {
+        color: var(--accent);
+      }
+
+      .term-input-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.2rem;
+        border-top: 1px solid var(--line);
+      }
+
+      .term-input-prompt {
+        color: var(--accent);
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      .term-input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        outline: none;
+        background: none;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        color: var(--ink);
+        padding: 0.2rem 0;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      /* iOS/Android auto-zoom on input focus only triggers below 16px */
+      @media (hover: none), (pointer: coarse) {
+        .term-input {
+          font-size: 16px;
+        }
+      }
+
+      .term-output,
+      .term-out-line {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      @media (max-height: 600px) {
+        .terminal-body {
+          height: min(280px, 50vh);
+        }
+      }
+
+      .term-input::placeholder {
+        color: var(--dim);
+      }
     </style>
   </head>
   <body>
     <div class="dotgrid"></div>
     <div class="grain"></div>
+    <div class="scanlines"></div>
+    <div class="crt-flicker"></div>
     <canvas id="trail"></canvas>
 
     <div class="cursor-box" id="ring"></div>
@@ -509,11 +769,11 @@
     <p class="subtitle">
       lana backwards is what i did with your mom last night
     </p>
-
     <div class="controls">
       <button id="gravityBtn">git push --force</button>
       <button id="shuffleBtn">rm -rf *</button>
       <button id="noteBtn">cat readme.md</button>
+      <button id="terminalBtn">bash terminal.sh</button>
     </div>
 
     <div class="modal-overlay" id="modalOverlay">
@@ -537,59 +797,190 @@
             anything.
           </p>
           <div class="modal-links">
-            <a
-              class="modal-link"
-              href="https://github.com/bluenotthecolor"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <svg
-                viewBox="0 0 16 16"
-                width="15"
-                height="15"
-                aria-hidden="true"
+            <div class="modal-link-row">
+              <a
+                class="modal-link"
+                href="https://github.com/bluenotthecolor"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                <path
-                  fill="currentColor"
-                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
-                  0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
-                  -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07
-                  -1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12
-                  0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27
-                  1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
-                  0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01
-                  2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"
-                />
-              </svg>
-              <span>github.com/bluenotthecolor</span>
-            </a>
-            <a
-              class="modal-link"
-              href="https://discord.com/users/1244917548898717779"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <svg
-                viewBox="0 0 16 16"
-                width="15"
-                height="15"
-                aria-hidden="true"
+                <svg
+                  viewBox="0 0 16 16"
+                  width="15"
+                  height="15"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+                    0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+                    -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07
+                    -1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12
+                    0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27
+                    1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
+                    0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01
+                    2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"
+                  />
+                </svg>
+                <span>github.com/bluenotthecolor</span>
+              </a>
+              <button
+                class="copy-btn"
+                type="button"
+                data-copy="https://github.com/bluenotthecolor"
+                aria-label="Copy GitHub link"
               >
-                <path
-                  fill="currentColor"
-                  d="M13.55 2.9A13.4 13.4 0 0 0 10.4 1.9c-.15.27-.31.62-.42.9a12.4 12.4 0 0 0-3.96 0
-                  c-.12-.28-.28-.63-.43-.9A13.3 13.3 0 0 0 2.45 2.9C.6 5.66.09 8.35.34 11
-                  a13.5 13.5 0 0 0 4.06 2.05c.33-.44.62-.92.86-1.42-.47-.18-.92-.4-1.35-.66
-                  .11-.08.22-.17.33-.25a9.6 9.6 0 0 0 8.14 0c.11.08.22.17.33.25
-                  -.43.26-.88.48-1.35.66.24.5.53.98.86 1.42A13.5 13.5 0 0 0 15.66 11
-                  c.3-3.08-.5-5.75-2.11-8.1ZM5.68 9.4c-.61 0-1.11-.56-1.11-1.24
-                  0-.68.49-1.24 1.11-1.24.63 0 1.13.57 1.12 1.24 0 .68-.49 1.24-1.12 1.24Zm4.64 0
-                  c-.61 0-1.11-.56-1.11-1.24 0-.68.49-1.24 1.11-1.24.63 0 1.13.57 1.12 1.24
-                  0 .68-.49 1.24-1.12 1.24Z"
-                />
-              </svg>
-              <span>discord</span>
-            </a>
+                <svg
+                  class="copy-icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="5.5"
+                    y="5.5"
+                    width="8"
+                    height="9"
+                    rx="1.3"
+                    stroke="currentColor"
+                    stroke-width="1.3"
+                  />
+                  <path
+                    d="M3.3 10.2V3.8A1.3 1.3 0 0 1 4.6 2.5h6"
+                    stroke="currentColor"
+                    stroke-width="1.3"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <svg
+                  class="check-icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 8.5L6.2 11.5L13 4.5"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="modal-link-row">
+              <a
+                class="modal-link"
+                href="https://discord.com/users/1244917548898717779"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  width="15"
+                  height="15"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M13.55 2.9A13.4 13.4 0 0 0 10.4 1.9c-.15.27-.31.62-.42.9a12.4 12.4 0 0 0-3.96 0
+                    c-.12-.28-.28-.63-.43-.9A13.3 13.3 0 0 0 2.45 2.9C.6 5.66.09 8.35.34 11
+                    a13.5 13.5 0 0 0 4.06 2.05c.33-.44.62-.92.86-1.42-.47-.18-.92-.4-1.35-.66
+                    .11-.08.22-.17.33-.25a9.6 9.6 0 0 0 8.14 0c.11.08.22.17.33.25
+                    -.43.26-.88.48-1.35.66.24.5.53.98.86 1.42A13.5 13.5 0 0 0 15.66 11
+                    c.3-3.08-.5-5.75-2.11-8.1ZM5.68 9.4c-.61 0-1.11-.56-1.11-1.24
+                    0-.68.49-1.24 1.11-1.24.63 0 1.13.57 1.12 1.24 0 .68-.49 1.24-1.12 1.24Zm4.64 0
+                    c-.61 0-1.11-.56-1.11-1.24 0-.68.49-1.24 1.11-1.24.63 0 1.13.57 1.12 1.24
+                    0 .68-.49 1.24-1.12 1.24Z"
+                  />
+                </svg>
+                <span>discord</span>
+              </a>
+              <button
+                class="copy-btn"
+                type="button"
+                data-copy="https://discord.com/users/1244917548898717779"
+                aria-label="Copy Discord link"
+              >
+                <svg
+                  class="copy-icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="5.5"
+                    y="5.5"
+                    width="8"
+                    height="9"
+                    rx="1.3"
+                    stroke="currentColor"
+                    stroke-width="1.3"
+                  />
+                  <path
+                    d="M3.3 10.2V3.8A1.3 1.3 0 0 1 4.6 2.5h6"
+                    stroke="currentColor"
+                    stroke-width="1.3"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <svg
+                  class="check-icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 8.5L6.2 11.5L13 4.5"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="copy-toast" id="copyToast">copied to clipboard</div>
+
+    <div class="modal-overlay" id="terminalOverlay">
+      <div class="modal-card terminal-card">
+        <div class="modal-titlebar">
+          <span class="dot"></span>
+          <span>bash — terminal</span>
+        </div>
+        <button
+          class="modal-close"
+          id="terminalClose"
+          aria-label="Close terminal"
+        >
+          &times;
+        </button>
+        <div class="terminal-body" id="terminalBody">
+          <div class="term-output" id="termOutput">
+            <div class="term-out-line">
+              lana-dev terminal v1.0.0 — type
+              <span class="term-out-accent">help</span> to get started
+            </div>
+          </div>
+          <div class="term-input-row">
+            <span class="term-input-prompt">$</span>
+            <input
+              type="text"
+              id="termInput"
+              class="term-input"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+              inputmode="text"
+              enterkeyhint="go"
+              aria-label="Terminal input"
+            />
           </div>
         </div>
       </div>
@@ -598,6 +989,9 @@
     <script>
       const isCoarsePointer = window.matchMedia(
         "(hover: none), (pointer: coarse)",
+      ).matches;
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
       ).matches;
 
       const lines = ["lana", "developer"];
@@ -661,7 +1055,7 @@
 
         document
           .querySelectorAll(
-            ".letter:not(.space), .controls button, .modal-close, a",
+            ".letter:not(.space), .controls button, .modal-close, a, .copy-btn",
           )
           .forEach((el) => {
             el.addEventListener("pointerenter", (e) => {
@@ -854,7 +1248,11 @@
       window.addEventListener(
         "pointerdown",
         (e) => {
-          if (e.target.closest(".modal-card") || e.target.closest(".controls"))
+          if (
+            e.target.closest(".modal-card") ||
+            e.target.closest(".controls") ||
+            e.target.closest(".modal-overlay")
+          )
             return;
 
           spawnRipple(e.clientX, e.clientY);
@@ -953,6 +1351,205 @@
       });
       window.addEventListener("keydown", (e) => {
         if (e.key === "Escape") closeModal();
+      });
+
+      // ---------- Click-to-copy links ----------
+      const copyToast = document.getElementById("copyToast");
+      let copyToastTimer = null;
+
+      function showCopyToast(message) {
+        copyToast.textContent = message;
+        copyToast.classList.add("visible");
+        clearTimeout(copyToastTimer);
+        copyToastTimer = setTimeout(() => {
+          copyToast.classList.remove("visible");
+        }, 1600);
+      }
+
+      async function copyValue(value) {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(value);
+          } else {
+            const temp = document.createElement("textarea");
+            temp.value = value;
+            temp.style.position = "fixed";
+            temp.style.opacity = "0";
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+          }
+          return true;
+        } catch (err) {
+          return false;
+        }
+      }
+
+      document.querySelectorAll(".copy-btn").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const value = btn.getAttribute("data-copy");
+          const ok = await copyValue(value);
+          if (ok) {
+            btn.classList.add("copied");
+            showCopyToast("copied to clipboard");
+            setTimeout(() => btn.classList.remove("copied"), 1400);
+          } else {
+            showCopyToast("couldn't copy — long-press to select instead");
+          }
+        });
+      });
+
+      // ---------- Interactive terminal ----------
+      const terminalBtn = document.getElementById("terminalBtn");
+      const terminalOverlay = document.getElementById("terminalOverlay");
+      const terminalClose = document.getElementById("terminalClose");
+      const termOutput = document.getElementById("termOutput");
+      const termInput = document.getElementById("termInput");
+
+      function termPrint(html, isEcho) {
+        const line = document.createElement("div");
+        line.className = "term-out-line" + (isEcho ? " term-cmd-echo" : "");
+        if (isEcho) {
+          line.textContent = html;
+        } else {
+          line.innerHTML = html;
+        }
+        termOutput.appendChild(line);
+        termOutput.scrollTop = termOutput.scrollHeight;
+      }
+
+      function updateTerminalHeight() {
+        const terminalBody = document.querySelector(".terminal-body");
+        if (!terminalBody) return;
+        const vh = window.visualViewport
+          ? window.visualViewport.height
+          : window.innerHeight;
+        const bodyHeight = Math.max(160, Math.min(420, vh * 0.55));
+        terminalBody.style.height = bodyHeight + "px";
+      }
+
+      function openTerminal() {
+        terminalOverlay.classList.add("active");
+        updateTerminalHeight();
+        // Focus synchronously (not in a timeout) so mobile Safari/Chrome
+        // still treat this as part of the user's tap gesture and actually
+        // raise the on-screen keyboard.
+        termInput.focus();
+      }
+      function closeTerminal() {
+        terminalOverlay.classList.remove("active");
+        termInput.blur();
+      }
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", () => {
+          if (terminalOverlay.classList.contains("active")) {
+            updateTerminalHeight();
+            termInput.scrollIntoView({ block: "nearest" });
+          }
+        });
+      }
+
+      terminalBtn.addEventListener("click", openTerminal);
+      terminalClose.addEventListener("click", closeTerminal);
+      terminalOverlay.addEventListener("click", (e) => {
+        if (e.target === terminalOverlay) closeTerminal();
+      });
+
+      const HELP_TEXT = [
+        "available commands:",
+        "&nbsp;&nbsp;help — show this list",
+        "&nbsp;&nbsp;whoami — who runs this site",
+        "&nbsp;&nbsp;ls — list things around here",
+        "&nbsp;&nbsp;cat readme.md — open the readme",
+        "&nbsp;&nbsp;date — current date/time",
+        "&nbsp;&nbsp;echo &lt;text&gt; — repeat text back",
+        "&nbsp;&nbsp;git push --force — toggle gravity mode",
+        "&nbsp;&nbsp;rm -rf * — shuffle the letters",
+        "&nbsp;&nbsp;sudo &lt;anything&gt; — try it and see",
+        "&nbsp;&nbsp;clear — clear the screen",
+        "&nbsp;&nbsp;exit — close this terminal",
+      ].join("\n");
+
+      function handleCommand(raw) {
+        const trimmed = raw.trim();
+        if (!trimmed) return;
+        termPrint(trimmed, true);
+
+        const lower = trimmed.toLowerCase();
+
+        if (lower === "help") {
+          termPrint(HELP_TEXT);
+        } else if (lower === "whoami") {
+          termPrint(
+            "full-stack developer, yuri lover, chaos in variable naming",
+          );
+        } else if (lower === "ls") {
+          termPrint(
+            '<span class="term-out-accent">github.com</span>&nbsp;&nbsp;<span class="term-out-accent">discord</span>&nbsp;&nbsp;readme.md&nbsp;&nbsp;mood.txt',
+          );
+        } else if (lower === "cat readme.md" || lower === "cat readme") {
+          termPrint("opening readme.md ...");
+          setTimeout(() => {
+            closeTerminal();
+            openModal();
+          }, 350);
+        } else if (lower === "date") {
+          termPrint(new Date().toString());
+        } else if (lower.startsWith("echo ")) {
+          termPrint(trimmed.slice(5));
+        } else if (lower === "git push --force") {
+          gravityBtn.click();
+          termPrint(
+            gravityOn
+              ? "gravity engaged. letters falling."
+              : "gravity reverted.",
+          );
+        } else if (lower === "rm -rf *") {
+          shuffleBtn.click();
+          termPrint("nice try. data intact, letters scattered though.");
+        } else if (lower.startsWith("sudo")) {
+          termPrint(
+            "Permission denied: lana is not in the sudoers file. This incident will be reported.",
+          );
+        } else if (lower === "clear" || lower === "cls") {
+          termOutput.innerHTML = "";
+        } else if (lower === "exit" || lower === "quit" || lower === "q") {
+          termPrint("goodbye.");
+          setTimeout(closeTerminal, 250);
+        } else if (lower === "coffee" || lower === "make coffee") {
+          termPrint("Error 418: I'm a teapot. Try tea instead.");
+        } else {
+          termPrint(
+            `command not found: ${escapeHtml(trimmed)} — try <span class="term-out-accent">help</span>`,
+          );
+        }
+      }
+
+      function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      termInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const value = termInput.value;
+          termInput.value = "";
+          handleCommand(value);
+        }
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (
+          e.key === "Escape" &&
+          terminalOverlay.classList.contains("active")
+        ) {
+          closeTerminal();
+        }
       });
 
       // ---------- Physics loop ----------
