@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f3f3f1" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f7a5c'/%3E%3Ctext x='9' y='43' font-family='monospace' font-weight='bold' font-size='28' fill='%23fdfdfc'%3E%3E_%3C/text%3E%3C/svg%3E"
+    />
+    <title>~$ pay</title>
+    <meta name="description" content="Support Lana — pick a payment option." />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <style>
+      :root {
+        --bg: #f3f3f1;
+        --card: #fdfdfc;
+        --card-bar: #ececea;
+        --ink: #1c1c1a;
+        --accent: #2f7a5c;
+        --accent-ink: #f6fbf8;
+        --dim: #8c8c86;
+        --line: #dcdcd6;
+        --mono:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, "Courier New",
+          monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html {
+        background: var(--bg);
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--mono);
+        position: relative;
+        cursor: none;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+
+      /* Coarse-pointer / touch devices get the normal cursor + full interactivity */
+      @media (hover: none), (pointer: coarse) {
+        body {
+          cursor: auto;
+        }
+        .cursor-box,
+        .cursor-caret {
+          display: none !important;
+        }
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
+
+      /* ---------- Background texture ---------- */
+      .dotgrid {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.045) 1px, transparent 1px);
+        background-size: 32px 32px;
+      }
+
+      .grain {
+        position: fixed;
+        inset: -50px;
+        z-index: 1;
+        pointer-events: none;
+        opacity: 0.03;
+        mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      /* ---------- Cursor: precise dot + trailing ring ---------- */
+      .cursor-caret {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        pointer-events: none;
+        z-index: 40;
+        transform: translate(-50%, -50%) scale(1);
+        transition:
+          transform 0.15s ease,
+          opacity 0.15s ease;
+      }
+
+      .cursor-caret.active {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0.6;
+      }
+
+      .cursor-box {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(28, 28, 26, 0.28);
+        pointer-events: none;
+        z-index: 39;
+        transform: translate(-50%, -50%) scale(1);
+        transition:
+          width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          border-color 0.25s ease,
+          background-color 0.25s ease,
+          opacity 0.2s ease;
+      }
+
+      .cursor-box.hover {
+        width: 64px;
+        height: 64px;
+        border-color: rgba(47, 122, 92, 0.55);
+        background-color: rgba(47, 122, 92, 0.06);
+      }
+
+      .cursor-box.active {
+        width: 22px;
+        height: 22px;
+        border-color: rgba(47, 122, 92, 0.9);
+      }
+
+      /* click ripple, same square-ring language as the rest of the site */
+      .ripple {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid rgba(47, 122, 92, 0.5);
+        pointer-events: none;
+        z-index: 38;
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.8;
+        transition:
+          transform 0.5s ease-out,
+          opacity 0.5s ease-out;
+      }
+
+      /* ---------- Layout ---------- */
+      .page {
+        position: relative;
+        z-index: 2;
+        max-width: 880px;
+        margin: 0 auto;
+        padding: clamp(3rem, 8vw, 5.5rem) 1.25rem clamp(3rem, 6vw, 4.5rem);
+      }
+
+      .hero {
+        text-align: center;
+        margin-bottom: clamp(2.5rem, 6vw, 3.5rem);
+        opacity: 0;
+        animation: rise 0.6s ease forwards;
+      }
+
+      .hero-eyebrow {
+        margin: 0 0 0.75rem;
+        font-size: 0.72rem;
+        letter-spacing: 0.02em;
+        color: var(--dim);
+      }
+
+      .hero-eyebrow::before {
+        content: "$ ";
+        color: var(--accent);
+        opacity: 0.8;
+      }
+
+      .hero-title {
+        margin: 0;
+        font-size: clamp(2rem, 7vw, 3rem);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+      }
+
+      .hero-title .accent {
+        color: var(--accent);
+      }
+
+      .hero-subtitle {
+        margin: 0.9rem 0 0;
+        font-size: 0.86rem;
+        color: var(--dim);
+      }
+
+      /* ---------- Cards ---------- */
+      .options {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      @media (max-width: 680px) {
+        .options {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .pay-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.07);
+        opacity: 0;
+        transform: translateY(14px);
+        animation: rise 0.6s ease forwards;
+        transition:
+          transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+          box-shadow 0.35s ease,
+          border-color 0.35s ease;
+      }
+
+      .pay-card:nth-child(1) {
+        animation-delay: 0.05s;
+      }
+      .pay-card:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .pay-card:nth-child(3) {
+        animation-delay: 0.15s;
+      }
+      .pay-card:nth-child(4) {
+        animation-delay: 0.2s;
+      }
+
+      .pay-card:hover,
+      .pay-card:focus-visible {
+        transform: translateY(-5px);
+        border-color: var(--accent);
+        box-shadow: 0 32px 70px rgba(0, 0, 0, 0.1);
+      }
+
+      .pay-card:active {
+        transform: translateY(-2px) scale(0.99);
+      }
+
+      .card-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.55rem 0.8rem;
+        background: var(--card-bar);
+        border-bottom: 1px solid var(--line);
+        font-size: 0.68rem;
+        color: var(--dim);
+      }
+
+      .card-bar .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #d9d5cf;
+      }
+
+      .card-bar .path {
+        margin-left: 0.15rem;
+      }
+
+      .card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        padding: 1.5rem 1.4rem 1.6rem;
+        flex-grow: 1;
+      }
+
+      .card-icon {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 5px;
+        font-size: 1.05rem;
+        color: var(--accent);
+        background: rgba(47, 122, 92, 0.09);
+        border: 1px solid rgba(47, 122, 92, 0.22);
+      }
+
+      .card-title {
+        margin: 0.3rem 0 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      .card-desc {
+        margin: 0;
+        font-size: 0.8rem;
+        line-height: 1.6;
+        color: var(--dim);
+        flex-grow: 1;
+      }
+
+      .card-cta {
+        position: relative;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 0.4rem;
+        padding: 0.65rem 1rem;
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--accent-ink);
+        background: var(--accent);
+        border-radius: 4px;
+        transition:
+          filter 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .card-cta i {
+        font-size: 0.68rem;
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .pay-card:hover .card-cta,
+      .pay-card:focus-visible .card-cta {
+        filter: brightness(1.08);
+      }
+
+      .pay-card:hover .card-cta i,
+      .pay-card:focus-visible .card-cta i {
+        transform: translateX(3px);
+      }
+
+      /* ---------- Footer ---------- */
+      .page-footer {
+        margin-top: clamp(2.5rem, 6vw, 3.5rem);
+        text-align: center;
+        font-size: 0.72rem;
+        color: var(--dim);
+        opacity: 0;
+        animation: rise 0.6s ease forwards;
+        animation-delay: 0.3s;
+      }
+
+      .page-footer p {
+        margin: 0;
+      }
+
+      .page-footer p::before {
+        content: "// ";
+        color: var(--dim);
+        opacity: 0.7;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.001ms !important;
+          transition-duration: 0.001ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dotgrid"></div>
+    <div class="grain"></div>
+
+    <div class="cursor-box" id="ring"></div>
+    <div class="cursor-caret" id="dot"></div>
+
+    <main class="page">
+      <header class="hero">
+        <p class="hero-eyebrow">lannna.ca/pay</p>
+        <h1 class="hero-title">Support <span class="accent">Lana</span></h1>
+        <p class="hero-subtitle">Choose a payment option below.</p>
+      </header>
+
+      <section class="options" aria-label="Payment options">
+        <a
+          class="pay-card"
+          data-link="donate"
+          href="#"
+          aria-describedby="donate-desc"
+        >
+          <div class="card-bar">
+            <span class="dot"></span>
+            <span class="path">~/donate</span>
+          </div>
+          <div class="card-body">
+            <div class="card-icon">
+              <i class="fa-solid fa-heart" aria-hidden="true"></i>
+            </div>
+            <h2 class="card-title">Donate</h2>
+            <p class="card-desc" id="donate-desc">
+              Support my work with any amount.
+            </p>
+            <span class="card-cta">
+              <span>Donate</span>
+              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="pay-card"
+          data-link="store"
+          href="#"
+          aria-describedby="store-desc"
+        >
+          <div class="card-bar">
+            <span class="dot"></span>
+            <span class="path">~/store</span>
+          </div>
+          <div class="card-body">
+            <div class="card-icon">
+              <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+            </div>
+            <h2 class="card-title">Store</h2>
+            <p class="card-desc" id="store-desc">
+              Browse digital products, commissions, and other items available
+              for purchase.
+            </p>
+            <span class="card-cta">
+              <span>Open Store</span>
+              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="pay-card"
+          data-link="hire"
+          href="#"
+          aria-describedby="hire-desc"
+        >
+          <div class="card-bar">
+            <span class="dot"></span>
+            <span class="path">~/hire</span>
+          </div>
+          <div class="card-body">
+            <div class="card-icon">
+              <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
+            </div>
+            <h2 class="card-title">Hire Me</h2>
+            <p class="card-desc" id="hire-desc">
+              Need a website, Discord bot, or custom project? Start here.
+            </p>
+            <span class="card-cta">
+              <span>Hire Me</span>
+              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="pay-card"
+          data-link="contact"
+          href="#"
+          aria-describedby="contact-desc"
+        >
+          <div class="card-bar">
+            <span class="dot"></span>
+            <span class="path">~/contact</span>
+          </div>
+          <div class="card-body">
+            <div class="card-icon">
+              <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>
+            </div>
+            <h2 class="card-title">Contact</h2>
+            <p class="card-desc" id="contact-desc">
+              Not sure what you need? Get in touch before purchasing.
+            </p>
+            <span class="card-cta">
+              <span>Contact</span>
+              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </span>
+          </div>
+        </a>
+      </section>
+
+      <footer class="page-footer">
+        <p>payments are handled securely by external providers</p>
+      </footer>
+    </main>
+
+    <script>
+      /* ============================================================
+         Configuration — every card pulls its destination from here.
+         ============================================================ */
+      const LINKS = {
+        donate: "https://lanas-shop.fourthwall.com/pages/donate",
+        store: "https://lanas-shop.fourthwall.com/pages/store",
+        hire: "https://lanas-shop.fourthwall.com/pages/hire",
+        contact: "https://lanas-shop.fourthwall.com/pages/contact",
+      };
+
+      (function () {
+        "use strict";
+
+        const isCoarsePointer = window.matchMedia(
+          "(hover: none), (pointer: coarse)",
+        ).matches;
+
+        /* ---------- Custom cursor (mouse/trackpad only) ---------- */
+        const dot = document.getElementById("dot");
+        const ring = document.getElementById("ring");
+        let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        let ringPos = { x: mouse.x, y: mouse.y };
+
+        if (!isCoarsePointer) {
+          window.addEventListener("pointermove", (e) => {
+            if (e.pointerType && e.pointerType !== "mouse") return;
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            dot.style.left = e.clientX + "px";
+            dot.style.top = e.clientY + "px";
+          });
+
+          document.querySelectorAll(".pay-card, a, button").forEach((el) => {
+            el.addEventListener("pointerenter", (e) => {
+              if (e.pointerType === "mouse") ring.classList.add("hover");
+            });
+            el.addEventListener("pointerleave", (e) => {
+              if (e.pointerType === "mouse") ring.classList.remove("hover");
+            });
+          });
+
+          window.addEventListener("pointerdown", (e) => {
+            if (e.pointerType === "mouse") {
+              ring.classList.add("active");
+              dot.classList.add("active");
+            }
+          });
+          window.addEventListener("pointerup", () => {
+            ring.classList.remove("active");
+            dot.classList.remove("active");
+          });
+
+          (function follow() {
+            ringPos.x += (mouse.x - ringPos.x) * 0.18;
+            ringPos.y += (mouse.y - ringPos.y) * 0.18;
+            ring.style.left = ringPos.x + "px";
+            ring.style.top = ringPos.y + "px";
+            requestAnimationFrame(follow);
+          })();
+        }
+
+        /* ---------- Click ripple ---------- */
+        function spawnRipple(x, y) {
+          const r = document.createElement("div");
+          r.className = "ripple";
+          r.style.left = x + "px";
+          r.style.top = y + "px";
+          document.body.appendChild(r);
+          requestAnimationFrame(() => {
+            r.style.transform = "translate(-50%, -50%) scale(2.6)";
+            r.style.opacity = "0";
+          });
+          setTimeout(() => r.remove(), 500);
+        }
+
+        window.addEventListener("pointerdown", (e) => {
+          spawnRipple(e.clientX, e.clientY);
+        });
+
+        /* ---------- Cards: link config, navigation, keyboard ---------- */
+        document.querySelectorAll(".pay-card[data-link]").forEach((card) => {
+          const key = card.getAttribute("data-link");
+          const url = LINKS[key];
+
+          if (url) {
+            card.setAttribute("href", url);
+            card.setAttribute("rel", "noopener noreferrer");
+          } else {
+            card.setAttribute("aria-disabled", "true");
+          }
+
+          card.addEventListener("click", (event) => {
+            if (!url) {
+              event.preventDefault();
+              console.warn(`No link configured for "${key}" in LINKS.`);
+              return;
+            }
+            event.preventDefault();
+            window.setTimeout(() => {
+              window.open(url, "_blank", "noopener,noreferrer");
+            }, 120);
+          });
+
+          card.addEventListener("keydown", (event) => {
+            if (event.key === " " || event.key === "Spacebar") {
+              event.preventDefault();
+              card.click();
+            }
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
