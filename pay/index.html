@@ -107,18 +107,23 @@
       /* ---------- Cursor: precise dot + trailing ring ---------- */
       .cursor-caret {
         position: fixed;
-        top: 0;
-        left: 0;
+        top: 50%;
+        left: 50%;
         width: 6px;
         height: 6px;
         border-radius: 50%;
         background: var(--accent);
         pointer-events: none;
         z-index: 40;
+        opacity: 0;
         transform: translate(-50%, -50%) scale(1);
         transition:
           transform 0.15s ease,
           opacity 0.15s ease;
+      }
+
+      .cursor-caret.ready {
+        opacity: 1;
       }
 
       .cursor-caret.active {
@@ -128,14 +133,15 @@
 
       .cursor-box {
         position: fixed;
-        top: 0;
-        left: 0;
+        top: 50%;
+        left: 50%;
         width: 30px;
         height: 30px;
         border-radius: 50%;
         border: 1.5px solid rgba(28, 28, 26, 0.28);
         pointer-events: none;
         z-index: 39;
+        opacity: 0;
         transform: translate(-50%, -50%) scale(1);
         transition:
           width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
@@ -143,6 +149,10 @@
           border-color 0.25s ease,
           background-color 0.25s ease,
           opacity 0.2s ease;
+      }
+
+      .cursor-box.ready {
+        opacity: 1;
       }
 
       .cursor-box.hover {
@@ -176,13 +186,57 @@
           opacity 0.5s ease-out;
       }
 
+      /* ---------- Top navbar ---------- */
+      .topbar {
+        position: relative;
+        z-index: 6;
+        display: flex;
+        justify-content: center;
+        max-width: 880px;
+        margin: 0 auto;
+        padding: clamp(1.3rem, 3vw, 1.8rem) 1.25rem 0;
+      }
+
+      .topnav {
+        display: flex;
+        gap: 1.1rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .topnav a {
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        color: var(--dim);
+        text-decoration: none;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid transparent;
+        transition:
+          color 0.2s ease,
+          border-color 0.2s ease;
+        white-space: nowrap;
+      }
+
+      .topnav a::before {
+        content: "$ ";
+        color: var(--accent);
+        opacity: 0.7;
+      }
+
+      .topnav a:hover,
+      .topnav a:focus-visible,
+      .topnav a[aria-current="page"] {
+        color: var(--ink);
+        border-color: var(--dim);
+      }
+
       /* ---------- Layout ---------- */
       .page {
         position: relative;
         z-index: 2;
         max-width: 880px;
         margin: 0 auto;
-        padding: clamp(3rem, 8vw, 5.5rem) 1.25rem clamp(3rem, 6vw, 4.5rem);
+        padding: clamp(1.5rem, 5vw, 2.5rem) 1.25rem clamp(3rem, 6vw, 4.5rem);
       }
 
       .hero {
@@ -419,6 +473,13 @@
     <div class="cursor-box" id="ring"></div>
     <div class="cursor-caret" id="dot"></div>
 
+    <header class="topbar">
+      <nav class="topnav">
+        <a href="/">home</a>
+        <a href="/cursors">cursors</a>
+      </nav>
+    </header>
+
     <main class="page">
       <header class="hero">
         <p class="hero-eyebrow">lannna.ca/pay</p>
@@ -557,6 +618,7 @@
         const ring = document.getElementById("ring");
         let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
         let ringPos = { x: mouse.x, y: mouse.y };
+        let cursorReady = false;
 
         if (!isCoarsePointer) {
           window.addEventListener("pointermove", (e) => {
@@ -565,16 +627,27 @@
             mouse.y = e.clientY;
             dot.style.left = e.clientX + "px";
             dot.style.top = e.clientY + "px";
+            if (!cursorReady) {
+              cursorReady = true;
+              ringPos.x = e.clientX;
+              ringPos.y = e.clientY;
+              ring.style.left = e.clientX + "px";
+              ring.style.top = e.clientY + "px";
+              dot.classList.add("ready");
+              ring.classList.add("ready");
+            }
           });
 
-          document.querySelectorAll(".pay-card, a, button").forEach((el) => {
-            el.addEventListener("pointerenter", (e) => {
-              if (e.pointerType === "mouse") ring.classList.add("hover");
+          document
+            .querySelectorAll(".pay-card, .topnav a, a, button")
+            .forEach((el) => {
+              el.addEventListener("pointerenter", (e) => {
+                if (e.pointerType === "mouse") ring.classList.add("hover");
+              });
+              el.addEventListener("pointerleave", (e) => {
+                if (e.pointerType === "mouse") ring.classList.remove("hover");
+              });
             });
-            el.addEventListener("pointerleave", (e) => {
-              if (e.pointerType === "mouse") ring.classList.remove("hover");
-            });
-          });
 
           window.addEventListener("pointerdown", (e) => {
             if (e.pointerType === "mouse") {
@@ -588,10 +661,12 @@
           });
 
           (function follow() {
-            ringPos.x += (mouse.x - ringPos.x) * 0.18;
-            ringPos.y += (mouse.y - ringPos.y) * 0.18;
-            ring.style.left = ringPos.x + "px";
-            ring.style.top = ringPos.y + "px";
+            if (cursorReady) {
+              ringPos.x += (mouse.x - ringPos.x) * 0.18;
+              ringPos.y += (mouse.y - ringPos.y) * 0.18;
+              ring.style.left = ringPos.x + "px";
+              ring.style.top = ringPos.y + "px";
+            }
             requestAnimationFrame(follow);
           })();
         }

@@ -141,18 +141,23 @@
       /* ---------- Cursor: precise dot + smooth trailing ring ---------- */
       .cursor-caret {
         position: fixed;
-        top: 0;
-        left: 0;
+        top: 50%;
+        left: 50%;
         width: 6px;
         height: 6px;
         border-radius: 50%;
         background: var(--accent);
         pointer-events: none;
         z-index: 8;
+        opacity: 0;
         transform: translate(-50%, -50%) scale(1);
         transition:
           transform 0.15s ease,
           opacity 0.15s ease;
+      }
+
+      .cursor-caret.ready {
+        opacity: 1;
       }
 
       .cursor-caret.active {
@@ -162,14 +167,15 @@
 
       .cursor-box {
         position: fixed;
-        top: 0;
-        left: 0;
+        top: 50%;
+        left: 50%;
         width: 30px;
         height: 30px;
         border-radius: 50%;
         border: 1.5px solid rgba(28, 28, 26, 0.28);
         pointer-events: none;
         z-index: 7;
+        opacity: 0;
         transform: translate(-50%, -50%) scale(1);
         transition:
           width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
@@ -177,6 +183,10 @@
           border-color 0.25s ease,
           background-color 0.25s ease,
           opacity 0.2s ease;
+      }
+
+      .cursor-box.ready {
+        opacity: 1;
       }
 
       .cursor-box.hover {
@@ -207,6 +217,72 @@
         transition:
           transform 0.5s ease-out,
           opacity 0.5s ease-out;
+      }
+
+      /* ---------- Top navbar ---------- */
+      .topbar {
+        position: fixed;
+        top: calc(1.3rem + env(safe-area-inset-top));
+        left: 0;
+        right: 0;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0 1rem;
+        text-align: center;
+      }
+
+      .topnav {
+        display: flex;
+        gap: 1.1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .topnav a {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        color: var(--dim);
+        text-decoration: none;
+        padding: 0.35rem 0;
+        border-bottom: 1px solid transparent;
+        transition:
+          color 0.2s ease,
+          border-color 0.2s ease;
+        white-space: nowrap;
+        touch-action: manipulation;
+      }
+
+      .topnav a::before {
+        content: "$ ";
+        color: var(--accent);
+        opacity: 0.7;
+      }
+
+      .topnav a:hover,
+      .topnav a:focus-visible,
+      .topnav a[aria-current="page"] {
+        color: var(--ink);
+        border-color: var(--dim);
+      }
+
+      footer {
+        margin: 0;
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        letter-spacing: 0.01em;
+        color: var(--dim);
+      }
+
+      @media (hover: none), (pointer: coarse) {
+        footer {
+          font-size: 0.66rem;
+        }
+        .topnav a {
+          font-size: 0.68rem;
+        }
       }
 
       #phrase {
@@ -322,25 +398,6 @@
           bottom: calc(1.6rem + env(safe-area-inset-bottom));
         }
         .controls button {
-          font-size: 0.66rem;
-        }
-      }
-
-      footer {
-        position: fixed;
-        top: calc(1.6rem + env(safe-area-inset-top));
-        left: 0;
-        right: 0;
-        text-align: center;
-        font-family: var(--mono);
-        font-size: 0.7rem;
-        color: var(--dim);
-        z-index: 5;
-        padding: 0 1rem;
-      }
-
-      @media (hover: none), (pointer: coarse) {
-        footer {
           font-size: 0.66rem;
         }
       }
@@ -604,7 +661,14 @@
     <div class="cursor-box" id="ring"></div>
     <div class="cursor-caret" id="dot"></div>
 
-    <footer>// drag a letter · tap for a note</footer>
+    <div class="topbar">
+      <nav class="topnav">
+        <a href="/" aria-current="page">home</a>
+        <a href="/cursors">cursors</a>
+        <a href="/pay">support</a>
+      </nav>
+      <footer>// drag a letter · tap for a note</footer>
+    </div>
 
     <div id="phrase"></div>
     <p class="subtitle">
@@ -846,17 +910,27 @@
       const dot = document.getElementById("dot");
       const ring = document.getElementById("ring");
       let ringPos = { x: mouse.x, y: mouse.y };
+      let cursorReady = false;
 
       if (!isCoarsePointer) {
         window.addEventListener("pointermove", (e) => {
           if (e.pointerType && e.pointerType !== "mouse") return;
           dot.style.left = e.clientX + "px";
           dot.style.top = e.clientY + "px";
+          if (!cursorReady) {
+            cursorReady = true;
+            ringPos.x = e.clientX;
+            ringPos.y = e.clientY;
+            ring.style.left = e.clientX + "px";
+            ring.style.top = e.clientY + "px";
+            dot.classList.add("ready");
+            ring.classList.add("ready");
+          }
         });
 
         document
           .querySelectorAll(
-            ".letter:not(.space), .controls button, .modal-close, a, .copy-btn",
+            ".letter:not(.space), .controls button, .topnav a, .modal-close, a, .copy-btn",
           )
           .forEach((el) => {
             el.addEventListener("pointerenter", (e) => {
@@ -1052,6 +1126,7 @@
           if (
             e.target.closest(".modal-card") ||
             e.target.closest(".controls") ||
+            e.target.closest(".topbar") ||
             e.target.closest(".modal-overlay")
           )
             return;
@@ -1271,7 +1346,7 @@
           dragging.el.style.transform = `translate(${dragging.dx}px, ${dragging.dy}px)`;
         }
 
-        if (!isCoarsePointer) {
+        if (!isCoarsePointer && cursorReady) {
           ringPos.x += (mouse.x - ringPos.x) * 0.18;
           ringPos.y += (mouse.y - ringPos.y) * 0.18;
           ring.style.left = ringPos.x + "px";
