@@ -675,12 +675,12 @@
       <div id="uploadPanel" style="display: none">
         <div class="dropzone" id="dropzone" aria-disabled="true">
           <strong>tap to choose files, or drag &amp; drop</strong>
-          .cur · .ani · .png · .svg — up to ~5&nbsp;MB each
+          .cur · .ani · .png · .svg · .zip — up to ~20&nbsp;MB each
           <input
             type="file"
             id="fileInput"
             multiple
-            accept=".cur,.ani,.png,.svg,image/*"
+            accept=".cur,.ani,.png,.svg,.zip,image/*,application/zip,application/x-zip-compressed"
           />
         </div>
         <div class="queue" id="queue"></div>
@@ -1084,17 +1084,30 @@
           const preview = document.createElement("div");
           preview.className = "preview";
           const ext = (f.name.split(".").pop() || "").toLowerCase();
-          if (["png", "svg", "jpg", "jpeg", "gif", "webp"].includes(ext)) {
+          const RASTER = ["png", "svg", "jpg", "jpeg", "gif", "webp"];
+          // .cur/.ani/.ico aren't reliably renderable in every browser, so
+          // try an <img> first and fall back to the badge if it fails.
+          const TRY_AS_IMAGE = ["cur", "ico"];
+
+          function showBadge() {
+            preview.innerHTML = "";
+            const badge = document.createElement("span");
+            badge.className = "filetype-badge";
+            badge.textContent = ext === "zip" ? "📦 .zip" : "." + ext;
+            preview.appendChild(badge);
+          }
+
+          if (RASTER.includes(ext) || TRY_AS_IMAGE.includes(ext)) {
             const img = document.createElement("img");
             img.src = f.download_url;
             img.loading = "lazy";
             img.alt = f.name;
+            if (TRY_AS_IMAGE.includes(ext)) {
+              img.addEventListener("error", showBadge, { once: true });
+            }
             preview.appendChild(img);
           } else {
-            const badge = document.createElement("span");
-            badge.className = "filetype-badge";
-            badge.textContent = "." + ext;
-            preview.appendChild(badge);
+            showBadge();
           }
 
           const meta = document.createElement("div");
@@ -1114,13 +1127,17 @@
           dl.rel = "noopener noreferrer";
           dl.textContent = "download";
 
-          const cssBtn = document.createElement("button");
-          cssBtn.textContent = "copy css";
-          cssBtn.addEventListener("click", () => {
-            copyText(`cursor: url("${f.download_url}"), auto;`);
-          });
+          actions.append(dl);
 
-          actions.append(dl, cssBtn);
+          if (ext !== "zip") {
+            const cssBtn = document.createElement("button");
+            cssBtn.textContent = "copy css";
+            cssBtn.addEventListener("click", () => {
+              copyText(`cursor: url("${f.download_url}"), auto;`);
+            });
+            actions.append(cssBtn);
+          }
+
           if (isConfigured()) {
             const delBtn = document.createElement("button");
             delBtn.className = "del";
@@ -1246,10 +1263,10 @@
         row.append(nameSpan, status);
         queueEl.appendChild(row);
 
-        const MAX_BYTES = 5 * 1024 * 1024;
+        const MAX_BYTES = 20 * 1024 * 1024;
         if (file.size > MAX_BYTES) {
           row.classList.add("err");
-          status.textContent = "too large (>5MB)";
+          status.textContent = "too large (>20MB)";
           return;
         }
 
