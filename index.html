@@ -219,7 +219,7 @@
           opacity 0.5s ease-out;
       }
 
-      /* ---------- Top navbar ---------- */
+      /* ---------- Top tagline ---------- */
       .topbar {
         position: fixed;
         top: calc(1.3rem + env(safe-area-inset-top));
@@ -234,40 +234,6 @@
         text-align: center;
       }
 
-      .topnav {
-        display: flex;
-        gap: 1.1rem;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      .topnav a {
-        font-family: var(--mono);
-        font-size: 0.72rem;
-        color: var(--dim);
-        text-decoration: none;
-        padding: 0.35rem 0;
-        border-bottom: 1px solid transparent;
-        transition:
-          color 0.2s ease,
-          border-color 0.2s ease;
-        white-space: nowrap;
-        touch-action: manipulation;
-      }
-
-      .topnav a::before {
-        content: "$ ";
-        color: var(--accent);
-        opacity: 0.7;
-      }
-
-      .topnav a:hover,
-      .topnav a:focus-visible,
-      .topnav a[aria-current="page"] {
-        color: var(--ink);
-        border-color: var(--dim);
-      }
-
       footer {
         margin: 0;
         font-family: var(--mono);
@@ -279,9 +245,6 @@
       @media (hover: none), (pointer: coarse) {
         footer {
           font-size: 0.66rem;
-        }
-        .topnav a {
-          font-size: 0.68rem;
         }
       }
 
@@ -662,11 +625,6 @@
     <div class="cursor-caret" id="dot"></div>
 
     <div class="topbar">
-      <nav class="topnav">
-        <a href="/" aria-current="page">home</a>
-        <a href="/cursors">cursors</a>
-        <a href="/pay">support</a>
-      </nav>
       <footer>// drag a letter · tap for a note</footer>
     </div>
 
@@ -930,7 +888,7 @@
 
         document
           .querySelectorAll(
-            ".letter:not(.space), .controls button, .topnav a, .modal-close, a, .copy-btn",
+            ".letter:not(.space), .controls button, .modal-close, a, .copy-btn",
           )
           .forEach((el) => {
             el.addEventListener("pointerenter", (e) => {

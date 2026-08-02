@@ -186,50 +186,6 @@
           opacity 0.5s ease-out;
       }
 
-      /* ---------- Top navbar ---------- */
-      .topbar {
-        position: relative;
-        z-index: 6;
-        display: flex;
-        justify-content: center;
-        max-width: 880px;
-        margin: 0 auto;
-        padding: clamp(1.3rem, 3vw, 1.8rem) 1.25rem 0;
-      }
-
-      .topnav {
-        display: flex;
-        gap: 1.1rem;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-
-      .topnav a {
-        font-family: var(--mono);
-        font-size: 0.75rem;
-        color: var(--dim);
-        text-decoration: none;
-        padding: 0.4rem 0;
-        border-bottom: 1px solid transparent;
-        transition:
-          color 0.2s ease,
-          border-color 0.2s ease;
-        white-space: nowrap;
-      }
-
-      .topnav a::before {
-        content: "$ ";
-        color: var(--accent);
-        opacity: 0.7;
-      }
-
-      .topnav a:hover,
-      .topnav a:focus-visible,
-      .topnav a[aria-current="page"] {
-        color: var(--ink);
-        border-color: var(--dim);
-      }
-
       /* ---------- Layout ---------- */
       .page {
         position: relative;
@@ -473,13 +429,6 @@
     <div class="cursor-box" id="ring"></div>
     <div class="cursor-caret" id="dot"></div>
 
-    <header class="topbar">
-      <nav class="topnav">
-        <a href="/">home</a>
-        <a href="/cursors">cursors</a>
-      </nav>
-    </header>
-
     <main class="page">
       <header class="hero">
         <p class="hero-eyebrow">lannna.ca/pay</p>
@@ -638,16 +587,14 @@
             }
           });
 
-          document
-            .querySelectorAll(".pay-card, .topnav a, a, button")
-            .forEach((el) => {
-              el.addEventListener("pointerenter", (e) => {
-                if (e.pointerType === "mouse") ring.classList.add("hover");
-              });
-              el.addEventListener("pointerleave", (e) => {
-                if (e.pointerType === "mouse") ring.classList.remove("hover");
-              });
+          document.querySelectorAll(".pay-card, a, button").forEach((el) => {
+            el.addEventListener("pointerenter", (e) => {
+              if (e.pointerType === "mouse") ring.classList.add("hover");
             });
+            el.addEventListener("pointerleave", (e) => {
+              if (e.pointerType === "mouse") ring.classList.remove("hover");
+            });
+          });
 
           window.addEventListener("pointerdown", (e) => {
             if (e.pointerType === "mouse") {
