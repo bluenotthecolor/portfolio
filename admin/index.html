@@ -1,0 +1,1239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#2f7a5c" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f7a5c'/%3E%3Ctext x='9' y='43' font-family='monospace' font-weight='bold' font-size='28' fill='%23fdfdfc'%3E%3E_%3C/text%3E%3C/svg%3E"
+    />
+    <title>~$ admin</title>
+    <style>
+      :root {
+        --bg: #f3f3f1;
+        --card: #fdfdfc;
+        --ink: #1c1c1a;
+        --accent: #2f7a5c;
+        --accent-dim: rgba(47, 122, 92, 0.1);
+        --dim: #8c8c86;
+        --line: #dcdcd6;
+        --danger: #b5566a;
+        --mono:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, "Courier New",
+          monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background: var(--bg);
+        font-family: var(--mono);
+        color: var(--ink);
+      }
+
+      body {
+        position: relative;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+
+      .dotgrid {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.045) 1px, transparent 1px);
+        background-size: 32px 32px;
+      }
+
+      /* ---------- password gate ---------- */
+      .gate {
+        position: relative;
+        z-index: 2;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.2rem;
+      }
+      .gate-card {
+        width: 100%;
+        max-width: 340px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.08);
+      }
+      .gate-titlebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.7rem 0.9rem;
+        background: #ececea;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.75rem;
+        color: var(--dim);
+      }
+      .gate-body {
+        padding: 1.4rem 1.3rem 1.6rem;
+      }
+      .gate-body p {
+        font-size: 0.75rem;
+        color: var(--dim);
+        margin: 0 0 1.1rem;
+        line-height: 1.6;
+      }
+      .gate-body input {
+        width: 100%;
+        font-family: var(--mono);
+        font-size: 0.85rem;
+        padding: 0.6rem 0.7rem;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #fff;
+        color: var(--ink);
+        margin-bottom: 0.8rem;
+      }
+      .gate-body input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .gate-body button {
+        width: 100%;
+        font-family: var(--mono);
+        font-size: 0.82rem;
+        padding: 0.6rem 0.9rem;
+        border-radius: 5px;
+        cursor: pointer;
+        border: 1px solid var(--accent);
+        background: var(--accent);
+        color: #fdfdfc;
+      }
+      .gate-body button:hover {
+        opacity: 0.9;
+      }
+      .gate-err {
+        font-size: 0.72rem;
+        color: var(--danger);
+        margin: -0.4rem 0 0.9rem;
+        min-height: 1em;
+      }
+
+      /* ---------- admin shell (shown after unlock) ---------- */
+      .wrap {
+        position: relative;
+        z-index: 2;
+        max-width: 880px;
+        margin: 0 auto;
+        padding: calc(2rem + env(safe-area-inset-top)) 1.2rem 4rem;
+        display: none;
+      }
+      .wrap.visible {
+        display: block;
+      }
+
+      header.top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.6rem;
+      }
+      nav.top-links {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+      }
+      nav.top-links a,
+      nav.top-links button {
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        color: var(--dim);
+        text-decoration: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid transparent;
+        transition:
+          color 0.2s ease,
+          border-color 0.2s ease;
+        white-space: nowrap;
+      }
+      nav.top-links a::before,
+      nav.top-links button::before {
+        content: "$ ";
+        color: var(--accent);
+        opacity: 0.7;
+      }
+      nav.top-links a:hover,
+      nav.top-links button:hover {
+        color: var(--ink);
+        border-color: var(--dim);
+      }
+      .lockout {
+        font-size: 0.72rem;
+        color: var(--dim);
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+      .lockout:hover {
+        color: var(--danger);
+      }
+
+      .hero {
+        margin-bottom: 2rem;
+      }
+      .breadcrumb {
+        font-size: 0.72rem;
+        color: var(--dim);
+        margin: 0 0 0.9rem;
+        letter-spacing: 0.01em;
+      }
+      .breadcrumb .prompt {
+        color: var(--accent);
+        opacity: 0.85;
+      }
+      .title {
+        font-size: clamp(1.7rem, 6vw, 2.4rem);
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        margin: 0 0 0.5rem;
+        line-height: 1.1;
+      }
+      .title .accent-word {
+        color: var(--accent);
+      }
+      .subtitle {
+        color: var(--dim);
+        font-size: 0.82rem;
+      }
+
+      /* ---------- status banner ---------- */
+      .banner {
+        border: 1px solid var(--line);
+        background: var(--card);
+        border-radius: 8px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 1.6rem;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .banner .msg {
+        color: var(--dim);
+      }
+      .banner .msg strong {
+        color: var(--ink);
+      }
+      .banner button {
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        background: var(--accent);
+        color: #fdfdfc;
+        border: none;
+        border-radius: 5px;
+        padding: 0.5rem 0.9rem;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .banner button:hover {
+        opacity: 0.9;
+      }
+
+      /* ---------- dropzone ---------- */
+      .dropzone {
+        border: 1.5px dashed var(--line);
+        border-radius: 10px;
+        padding: 2.4rem 1.2rem;
+        text-align: center;
+        color: var(--dim);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition:
+          border-color 0.2s ease,
+          background-color 0.2s ease;
+        margin-bottom: 2.2rem;
+      }
+      .dropzone.dragover {
+        border-color: var(--accent);
+        background: var(--accent-dim);
+        color: var(--accent);
+      }
+      .dropzone strong {
+        color: var(--ink);
+        display: block;
+        font-size: 0.95rem;
+        margin-bottom: 0.3rem;
+      }
+      .dropzone[aria-disabled="true"] {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .dropzone input[type="file"] {
+        display: none;
+      }
+
+      /* ---------- upload queue ---------- */
+      .queue {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin-bottom: 1.6rem;
+      }
+      .queue-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.76rem;
+        color: var(--dim);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0.5rem 0.7rem;
+      }
+      .queue-item .name {
+        color: var(--ink);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .queue-item.ok {
+        border-color: rgba(47, 122, 92, 0.4);
+        color: var(--accent);
+      }
+      .queue-item.err {
+        border-color: rgba(181, 86, 106, 0.4);
+        color: var(--danger);
+      }
+
+      /* ---------- gallery ---------- */
+      .gallery-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.9rem;
+      }
+      .gallery-head h2 {
+        font-size: 0.95rem;
+        margin: 0;
+        color: var(--ink);
+      }
+      .gallery-head .count {
+        color: var(--dim);
+        font-size: 0.75rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.9rem;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .card .preview {
+        aspect-ratio: 1 / 1;
+        background: repeating-conic-gradient(#ececeb 0% 25%, #f6f6f5 0% 50%)
+          50% / 16px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .card .preview img {
+        max-width: 70%;
+        max-height: 70%;
+        image-rendering: pixelated;
+      }
+      .card .preview .filetype-badge {
+        font-size: 0.7rem;
+        color: var(--dim);
+        letter-spacing: 0.03em;
+      }
+
+      .card .meta {
+        padding: 0.55rem 0.6rem 0.7rem;
+      }
+      .card .fname {
+        font-size: 0.72rem;
+        color: var(--ink);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-bottom: 0.5rem;
+      }
+      .card .actions {
+        display: flex;
+        gap: 0.35rem;
+      }
+      .card .actions button,
+      .card .actions a {
+        flex: 1;
+        text-align: center;
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        color: var(--dim);
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 0.32rem 0.2rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition:
+          color 0.15s ease,
+          border-color 0.15s ease;
+      }
+      .card .actions button:hover,
+      .card .actions a:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .card .actions .del:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+      }
+
+      .empty-state {
+        text-align: center;
+        color: var(--dim);
+        font-size: 0.82rem;
+        padding: 2.5rem 1rem;
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+      }
+
+      /* ---------- modal (github token settings) ---------- */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        background: rgba(20, 20, 18, 0.25);
+        backdrop-filter: blur(3px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        padding: calc(1rem + env(safe-area-inset-top)) 1rem;
+      }
+      .modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .modal-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        width: 100%;
+        max-width: 420px;
+        max-height: 88vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.16);
+        transform: translateY(8px) scale(0.98);
+        transition: transform 0.2s ease;
+      }
+      .modal-overlay.active .modal-card {
+        transform: translateY(0) scale(1);
+      }
+      .modal-titlebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.7rem 0.9rem;
+        background: #ececea;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.75rem;
+        color: var(--dim);
+      }
+      .modal-titlebar .close {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        line-height: 1;
+        color: var(--dim);
+        cursor: pointer;
+        padding: 0.2rem 0.4rem;
+      }
+      .modal-titlebar .close:hover {
+        color: var(--ink);
+      }
+      .modal-body {
+        padding: 1.2rem 1.3rem 1.5rem;
+      }
+      .modal-body p.hint {
+        font-size: 0.72rem;
+        color: var(--dim);
+        line-height: 1.6;
+        margin: 0 0 1rem;
+      }
+      .modal-body p.hint a {
+        color: var(--accent);
+      }
+      .field {
+        margin-bottom: 0.85rem;
+      }
+      .field label {
+        display: block;
+        font-size: 0.7rem;
+        color: var(--dim);
+        margin-bottom: 0.3rem;
+      }
+      .field input {
+        width: 100%;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        padding: 0.5rem 0.6rem;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #fff;
+        color: var(--ink);
+      }
+      .field input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .warn {
+        font-size: 0.7rem;
+        color: var(--danger);
+        background: rgba(181, 86, 106, 0.08);
+        border: 1px solid rgba(181, 86, 106, 0.25);
+        border-radius: 5px;
+        padding: 0.55rem 0.7rem;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 0.6rem;
+        margin-top: 1.2rem;
+      }
+      .modal-actions button {
+        font-family: var(--mono);
+        font-size: 0.76rem;
+        padding: 0.55rem 0.9rem;
+        border-radius: 5px;
+        cursor: pointer;
+        border: 1px solid var(--line);
+        background: none;
+        color: var(--dim);
+      }
+      .modal-actions button.primary {
+        background: var(--accent);
+        color: #fdfdfc;
+        border-color: var(--accent);
+        flex: 1;
+      }
+      .modal-actions button.primary:hover {
+        opacity: 0.9;
+      }
+      .modal-actions button.ghost:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+      }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(1.6rem + env(safe-area-inset-bottom));
+        transform: translateX(-50%) translateY(6px);
+        background: var(--ink);
+        color: var(--bg);
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        padding: 0.5rem 0.9rem;
+        border-radius: 5px;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 30;
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
+        white-space: nowrap;
+        max-width: 90vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .toast.visible {
+        opacity: 0.94;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.001ms !important;
+          transition-duration: 0.001ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dotgrid"></div>
+
+    <!-- ---------- password gate ---------- -->
+    <div class="gate" id="gate">
+      <div class="gate-card">
+        <div class="gate-titlebar"><span>authenticate</span></div>
+        <div class="gate-body">
+          <p>this page is private. enter the admin password to continue.</p>
+          <input
+            type="password"
+            id="gatePassword"
+            placeholder="password"
+            autocomplete="current-password"
+          />
+          <div class="gate-err" id="gateErr"></div>
+          <button id="gateSubmit">unlock</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- admin shell ---------- -->
+    <div class="wrap" id="wrap">
+      <header class="top">
+        <nav class="top-links">
+          <a href="/">home</a>
+          <a href="/cursors">cursors</a>
+          <button id="settingsBtn">settings</button>
+        </nav>
+        <button class="lockout" id="lockoutBtn">lock</button>
+      </header>
+
+      <div class="hero">
+        <p class="breadcrumb"><span class="prompt">$</span> lannna.ca/admin</p>
+        <h1 class="title">Cursor <span class="accent-word">Admin</span></h1>
+        <p class="subtitle">upload, manage, and remove cursors from the pack</p>
+      </div>
+
+      <div class="banner" id="ghBanner" style="display: none">
+        <span class="msg" id="ghBannerMsg"></span>
+        <button id="ghBannerBtn">settings</button>
+      </div>
+
+      <div id="uploadPanel" style="display: none">
+        <div class="dropzone" id="dropzone" aria-disabled="true">
+          <strong>tap to choose files, or drag &amp; drop</strong>
+          .cur · .ani · .png · .svg · .zip — up to ~20&nbsp;MB each
+          <input
+            type="file"
+            id="fileInput"
+            multiple
+            accept=".cur,.ani,.png,.svg,.zip,image/*,application/zip,application/x-zip-compressed"
+          />
+        </div>
+        <div class="queue" id="queue"></div>
+      </div>
+
+      <div class="gallery-head">
+        <h2>Cursors</h2>
+        <span class="count" id="galleryCount"></span>
+      </div>
+      <div id="gallery">
+        <div class="empty-state">loading...</div>
+      </div>
+    </div>
+
+    <!-- ---------- github token modal ---------- -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-card">
+        <div class="modal-titlebar">
+          <span>settings.json</span>
+          <button class="close" id="modalClose" aria-label="Close">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="hint">
+            paste your GitHub token to unlock uploading and deleting. use a
+            <strong>fine-grained</strong> token (<a
+              href="https://github.com/settings/personal-access-tokens/new"
+              target="_blank"
+              rel="noopener noreferrer"
+              >github.com/settings/personal-access-tokens/new</a
+            >) scoped to just this repo, with
+            <strong>Contents: Read and write</strong> permission. it's saved
+            only in this browser's local storage.
+          </p>
+          <div class="warn" id="publicWarn" style="display: none">
+            heads up: this repo is public, so anything uploaded here is publicly
+            downloadable.
+          </div>
+          <div class="field">
+            <label for="cfgToken">personal access token</label>
+            <input
+              type="password"
+              id="cfgToken"
+              placeholder="github_pat_..."
+              autocomplete="off"
+            />
+          </div>
+          <div class="modal-actions">
+            <button class="ghost" id="disconnectBtn">disconnect</button>
+            <button class="primary" id="saveConfigBtn">
+              save &amp; connect
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      // ===================================================================
+      // Password gate
+      // ===================================================================
+      // Client-side gate: this hides the admin UI from casual visitors and
+      // search engines, but it is NOT a real security boundary — anyone who
+      // views source can see the hash and brute-force it offline. The real
+      // protection for your data is still the GitHub token below, which is
+      // never embedded in this file.
+      //
+      // To set/change the password:
+      // 1. Open any browser console (even on a blank tab) and run:
+      //      crypto.subtle.digest("SHA-256", new TextEncoder().encode("yourpassword"))
+      //        .then(b => console.log(Array.from(new Uint8Array(b))
+      //          .map(x => x.toString(16).padStart(2, "0")).join("")))
+      // 2. Copy the printed hex string into ADMIN_PASSWORD_HASH below.
+      const ADMIN_PASSWORD_HASH = "REPLACE_WITH_YOUR_SHA256_HASH";
+
+      const SESSION_KEY = "cursorAdminUnlocked";
+
+      async function sha256Hex(text) {
+        const buf = await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(text),
+        );
+        return Array.from(new Uint8Array(buf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+
+      const gateEl = document.getElementById("gate");
+      const wrapEl = document.getElementById("wrap");
+      const gatePassword = document.getElementById("gatePassword");
+      const gateErr = document.getElementById("gateErr");
+      const gateSubmit = document.getElementById("gateSubmit");
+      const lockoutBtn = document.getElementById("lockoutBtn");
+
+      function showAdmin() {
+        gateEl.style.display = "none";
+        wrapEl.classList.add("visible");
+        refreshGate();
+      }
+
+      function lockAdmin() {
+        sessionStorage.removeItem(SESSION_KEY);
+        wrapEl.classList.remove("visible");
+        gateEl.style.display = "flex";
+        gatePassword.value = "";
+        gateErr.textContent = "";
+      }
+
+      async function tryUnlock() {
+        const entered = gatePassword.value;
+        if (!entered) return;
+        gateSubmit.disabled = true;
+        gateSubmit.textContent = "checking...";
+        const hash = await sha256Hex(entered);
+        gateSubmit.disabled = false;
+        gateSubmit.textContent = "unlock";
+
+        if (
+          ADMIN_PASSWORD_HASH === "REPLACE_WITH_YOUR_SHA256_HASH" ||
+          hash !== ADMIN_PASSWORD_HASH
+        ) {
+          gateErr.textContent =
+            ADMIN_PASSWORD_HASH === "REPLACE_WITH_YOUR_SHA256_HASH"
+              ? "no password configured yet — set ADMIN_PASSWORD_HASH in the file"
+              : "wrong password";
+          return;
+        }
+
+        sessionStorage.setItem(SESSION_KEY, "1");
+        showAdmin();
+      }
+
+      gateSubmit.addEventListener("click", tryUnlock);
+      gatePassword.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") tryUnlock();
+      });
+      lockoutBtn.addEventListener("click", lockAdmin);
+
+      if (sessionStorage.getItem(SESSION_KEY) === "1") {
+        showAdmin();
+      }
+
+      // ===================================================================
+      // Admin dashboard (upload / delete / GitHub token config)
+      // ===================================================================
+      const STORAGE_KEY = "cursorSiteConfig";
+      const API_BASE = "https://api.github.com";
+
+      const SITE_OWNER = "bluenotthecolor";
+      const SITE_REPO = "portfolio";
+      const SITE_BRANCH = "main";
+      const SITE_FOLDER = "cursors-data";
+
+      const el = (id) => document.getElementById(id);
+      const dropzone = el("dropzone");
+      const fileInput = el("fileInput");
+      const queueEl = el("queue");
+      const uploadPanel = el("uploadPanel");
+      const galleryEl = el("gallery");
+      const galleryCountEl = el("galleryCount");
+      const settingsBtn = el("settingsBtn");
+      const modalOverlay = el("modalOverlay");
+      const modalClose = el("modalClose");
+      const disconnectBtn = el("disconnectBtn");
+      const saveConfigBtn = el("saveConfigBtn");
+      const toastEl = el("toast");
+      const publicWarn = el("publicWarn");
+      const ghBanner = el("ghBanner");
+      const ghBannerMsg = el("ghBannerMsg");
+      const ghBannerBtn = el("ghBannerBtn");
+
+      let config = loadConfig();
+
+      function loadConfig() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : null;
+        } catch (err) {
+          return null;
+        }
+      }
+      function saveConfig(cfg) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+        config = cfg;
+      }
+      function clearConfig() {
+        localStorage.removeItem(STORAGE_KEY);
+        config = null;
+      }
+
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add("visible");
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(
+          () => toastEl.classList.remove("visible"),
+          2200,
+        );
+      }
+
+      function isConfigured() {
+        return !!(config && config.token);
+      }
+
+      function ghHeaders() {
+        if (!isConfigured()) return { Accept: "application/vnd.github+json" };
+        return {
+          Authorization: `token ${config.token}`,
+          Accept: "application/vnd.github+json",
+        };
+      }
+
+      function refreshGate() {
+        if (isConfigured()) {
+          uploadPanel.style.display = "block";
+          dropzone.setAttribute("aria-disabled", "false");
+          ghBanner.style.display = "none";
+        } else {
+          uploadPanel.style.display = "none";
+          ghBanner.style.display = "flex";
+          ghBannerMsg.innerHTML =
+            "no GitHub token connected — <strong>uploads &amp; deletes are disabled</strong>";
+        }
+        loadGallery();
+      }
+
+      // ---------- token modal ----------
+      function openModal() {
+        el("cfgToken").value = config && config.token ? config.token : "";
+        modalOverlay.classList.add("active");
+      }
+      function closeModal() {
+        modalOverlay.classList.remove("active");
+      }
+      settingsBtn.addEventListener("click", openModal);
+      ghBannerBtn.addEventListener("click", openModal);
+      modalClose.addEventListener("click", closeModal);
+      modalOverlay.addEventListener("click", (e) => {
+        if (e.target === modalOverlay) closeModal();
+      });
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeModal();
+      });
+
+      disconnectBtn.addEventListener("click", () => {
+        clearConfig();
+        closeModal();
+        refreshGate();
+        showToast("disconnected");
+      });
+
+      saveConfigBtn.addEventListener("click", async () => {
+        const token = el("cfgToken").value.trim();
+        if (!token) {
+          showToast("paste a token first");
+          return;
+        }
+        saveConfigBtn.disabled = true;
+        saveConfigBtn.textContent = "checking...";
+        const ok = await testConnection(token);
+        saveConfigBtn.disabled = false;
+        saveConfigBtn.textContent = "save & connect";
+        if (!ok.success) {
+          showToast(ok.message);
+          return;
+        }
+        saveConfig({ token });
+        closeModal();
+        refreshGate();
+        showToast("connected — you can upload now");
+      });
+
+      async function testConnection(token) {
+        try {
+          const res = await fetch(
+            `${API_BASE}/repos/${SITE_OWNER}/${SITE_REPO}`,
+            {
+              headers: {
+                Authorization: `token ${token}`,
+                Accept: "application/vnd.github+json",
+              },
+            },
+          );
+          if (res.status === 401)
+            return {
+              success: false,
+              message: "token rejected — check it's valid",
+            };
+          if (res.status === 404)
+            return {
+              success: false,
+              message: "repo not found — check the token's repo access",
+            };
+          if (!res.ok)
+            return { success: false, message: `github error (${res.status})` };
+          const data = await res.json();
+          publicWarn.style.display = data.private ? "none" : "block";
+          return { success: true };
+        } catch (err) {
+          return {
+            success: false,
+            message: "couldn't reach github — check your connection",
+          };
+        }
+      }
+
+      // ---------- gallery ----------
+      async function loadGallery() {
+        galleryEl.innerHTML = '<div class="empty-state">loading...</div>';
+        try {
+          const res = await fetch(
+            `${API_BASE}/repos/${SITE_OWNER}/${SITE_REPO}/contents/${encodeURIComponent(SITE_FOLDER)}?ref=${encodeURIComponent(SITE_BRANCH)}`,
+            { headers: ghHeaders() },
+          );
+
+          if (res.status === 404) {
+            renderGallery([]);
+            return;
+          }
+          if (res.status === 401) {
+            galleryEl.innerHTML =
+              '<div class="empty-state">token rejected — reopen settings to fix it</div>';
+            return;
+          }
+          if (!res.ok) {
+            galleryEl.innerHTML = `<div class="empty-state">github error (${res.status})</div>`;
+            return;
+          }
+
+          const data = await res.json();
+          const files = Array.isArray(data)
+            ? data.filter((f) => f.type === "file")
+            : [];
+          renderGallery(files);
+        } catch (err) {
+          galleryEl.innerHTML =
+            '<div class="empty-state">couldn\'t reach github</div>';
+        }
+      }
+
+      function renderGallery(files) {
+        galleryCountEl.textContent = files.length
+          ? `${files.length} file${files.length === 1 ? "" : "s"}`
+          : "";
+
+        if (!files.length) {
+          galleryEl.innerHTML = isConfigured()
+            ? '<div class="empty-state">nothing uploaded yet — drop a file above</div>'
+            : '<div class="empty-state">no cursors yet</div>';
+          return;
+        }
+
+        files.sort((a, b) => a.name.localeCompare(b.name));
+
+        galleryEl.innerHTML = "";
+        const grid = document.createElement("div");
+        grid.className = "grid";
+
+        files.forEach((f) => {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const preview = document.createElement("div");
+          preview.className = "preview";
+          const ext = (f.name.split(".").pop() || "").toLowerCase();
+          const RASTER = ["png", "svg", "jpg", "jpeg", "gif", "webp"];
+          const TRY_AS_IMAGE = ["cur", "ico"];
+
+          function showBadge() {
+            preview.innerHTML = "";
+            const badge = document.createElement("span");
+            badge.className = "filetype-badge";
+            badge.textContent = ext === "zip" ? "📦 .zip" : "." + ext;
+            preview.appendChild(badge);
+          }
+
+          if (RASTER.includes(ext) || TRY_AS_IMAGE.includes(ext)) {
+            const img = document.createElement("img");
+            img.src = f.download_url;
+            img.loading = "lazy";
+            img.alt = f.name;
+            if (TRY_AS_IMAGE.includes(ext)) {
+              img.addEventListener("error", showBadge, { once: true });
+            }
+            preview.appendChild(img);
+          } else {
+            showBadge();
+          }
+
+          const meta = document.createElement("div");
+          meta.className = "meta";
+
+          const fname = document.createElement("div");
+          fname.className = "fname";
+          fname.title = f.name;
+          fname.textContent = f.name;
+
+          const actions = document.createElement("div");
+          actions.className = "actions";
+
+          const dl = document.createElement("a");
+          dl.href = f.download_url;
+          dl.target = "_blank";
+          dl.rel = "noopener noreferrer";
+          dl.textContent = "download";
+          actions.append(dl);
+
+          if (ext !== "zip") {
+            const cssBtn = document.createElement("button");
+            cssBtn.textContent = "copy css";
+            cssBtn.addEventListener("click", () => {
+              copyText(`cursor: url("${f.download_url}"), auto;`);
+            });
+            actions.append(cssBtn);
+          }
+
+          if (isConfigured()) {
+            const delBtn = document.createElement("button");
+            delBtn.className = "del";
+            delBtn.textContent = "delete";
+            delBtn.addEventListener("click", () => deleteFile(f));
+            actions.append(delBtn);
+          }
+          meta.append(fname, actions);
+          card.append(preview, meta);
+          grid.appendChild(card);
+        });
+
+        galleryEl.appendChild(grid);
+      }
+
+      async function copyText(value) {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(value);
+          } else {
+            const temp = document.createElement("textarea");
+            temp.value = value;
+            temp.style.position = "fixed";
+            temp.style.opacity = "0";
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+          }
+          showToast("copied to clipboard");
+        } catch (err) {
+          showToast("couldn't copy");
+        }
+      }
+
+      async function deleteFile(f) {
+        if (!confirm(`delete "${f.name}"? this can't be undone.`)) return;
+        try {
+          const res = await fetch(
+            `${API_BASE}/repos/${SITE_OWNER}/${SITE_REPO}/contents/${encodeURIComponent(f.path)}`,
+            {
+              method: "DELETE",
+              headers: { ...ghHeaders(), "Content-Type": "application/json" },
+              body: JSON.stringify({
+                message: `remove cursor: ${f.name}`,
+                sha: f.sha,
+                branch: SITE_BRANCH,
+              }),
+            },
+          );
+          if (!res.ok) {
+            showToast(`delete failed (${res.status})`);
+            return;
+          }
+          showToast("deleted");
+          loadGallery();
+        } catch (err) {
+          showToast("delete failed — network error");
+        }
+      }
+
+      // ---------- upload ----------
+      dropzone.addEventListener("click", () => {
+        if (!isConfigured()) {
+          openModal();
+          return;
+        }
+        fileInput.click();
+      });
+
+      ["dragenter", "dragover"].forEach((evt) =>
+        dropzone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          if (isConfigured()) dropzone.classList.add("dragover");
+        }),
+      );
+      ["dragleave", "drop"].forEach((evt) =>
+        dropzone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          dropzone.classList.remove("dragover");
+        }),
+      );
+      dropzone.addEventListener("drop", (e) => {
+        if (!isConfigured()) return;
+        const files = Array.from(e.dataTransfer.files || []);
+        if (files.length) uploadFiles(files);
+      });
+
+      fileInput.addEventListener("change", () => {
+        const files = Array.from(fileInput.files || []);
+        if (files.length) uploadFiles(files);
+        fileInput.value = "";
+      });
+
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = () => reject(new Error("read failed"));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function sanitizeName(name) {
+        return name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      }
+
+      async function uploadFiles(files) {
+        for (const file of files) {
+          await uploadOne(file);
+        }
+        loadGallery();
+      }
+
+      async function uploadOne(file) {
+        const row = document.createElement("div");
+        row.className = "queue-item";
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "name";
+        nameSpan.textContent = file.name;
+        const status = document.createElement("span");
+        status.textContent = "uploading...";
+        row.append(nameSpan, status);
+        queueEl.appendChild(row);
+
+        const MAX_BYTES = 20 * 1024 * 1024;
+        if (file.size > MAX_BYTES) {
+          row.classList.add("err");
+          status.textContent = "too large (>20MB)";
+          return;
+        }
+
+        try {
+          const base64 = await fileToBase64(file);
+          const path = `${SITE_FOLDER}/${Date.now()}-${sanitizeName(file.name)}`;
+
+          const res = await fetch(
+            `${API_BASE}/repos/${SITE_OWNER}/${SITE_REPO}/contents/${encodeURIComponent(path)}`,
+            {
+              method: "PUT",
+              headers: { ...ghHeaders(), "Content-Type": "application/json" },
+              body: JSON.stringify({
+                message: `add cursor: ${file.name}`,
+                content: base64,
+                branch: SITE_BRANCH,
+              }),
+            },
+          );
+
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            row.classList.add("err");
+            status.textContent = body.message
+              ? `failed: ${body.message}`
+              : `failed (${res.status})`;
+            return;
+          }
+
+          row.classList.add("ok");
+          status.textContent = "done";
+          setTimeout(() => row.remove(), 2500);
+        } catch (err) {
+          row.classList.add("err");
+          status.textContent = "network error";
+        }
+      }
+    </script>
+  </body>
+</html>
