@@ -615,19 +615,6 @@
         color: var(--ink);
       }
     </style>
-
-    <script
-      src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
-      defer
-    ></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function (OneSignal) {
-        await OneSignal.init({
-          appId: "5f41e7c7-7ea8-4156-a692-21ae7a7eb9d6",
-        });
-      });
-    </script>
   </head>
   <body>
     <div class="dotgrid"></div>
@@ -830,7 +817,7 @@
         "(prefers-reduced-motion: reduce)",
       ).matches;
 
-      const lines = ["lana", "developer"];
+      const lines = ["lana", "banana"];
       const phraseEl = document.getElementById("phrase");
 
       const letters = [];
