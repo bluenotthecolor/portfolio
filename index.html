@@ -614,6 +614,44 @@
       .modal-close:hover {
         color: var(--ink);
       }
+
+      .banana-gif {
+        width: 350px;
+        height: auto;
+        image-rendering: pixelated;
+
+        margin-top: -300px;
+        margin-bottom: 14px;
+
+        z-index: 3;
+        pointer-events: none;
+
+        animation: bananaFloat 5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+        transform-origin: center bottom;
+        will-change: transform;
+      }
+
+      @keyframes bananaFloat {
+        0% {
+          transform: translateY(0px);
+        }
+
+        25% {
+          transform: translateY(-2px);
+        }
+
+        50% {
+          transform: translateY(-5px);
+        }
+
+        75% {
+          transform: translateY(-2px);
+        }
+
+        100% {
+          transform: translateY(0px);
+        }
+      }
     </style>
   </head>
   <body>
@@ -627,6 +665,12 @@
     <div class="topbar">
       <footer>// drag a letter · tap for a note</footer>
     </div>
+
+    <div class="topbar">
+      <footer>// drag a letter · tap for a note</footer>
+    </div>
+
+    <img src="banana.gif" class="banana-gif" alt="Lana Banana" />
 
     <div id="phrase"></div>
     <p class="subtitle">
@@ -852,6 +896,18 @@
         });
       }
       measure();
+
+      const bananaGif = document.querySelector(".banana-gif");
+
+      if (bananaGif) {
+        if (bananaGif.complete) {
+          measure();
+        } else {
+          bananaGif.addEventListener("load", () => {
+            measure();
+          });
+        }
+      }
 
       let resizeTimer = null;
       function handleResize() {
