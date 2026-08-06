@@ -627,11 +627,34 @@
         margin-bottom: 14px;
 
         z-index: 3;
-        pointer-events: none;
+        pointer-events: auto;
+        cursor: pointer;
 
         animation: bananaFloat 5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
         transform-origin: center bottom;
         will-change: transform;
+      }
+
+      .banana-gif.squish {
+        animation: bananaSquish 0.4s ease;
+      }
+
+      @keyframes bananaSquish {
+        0% {
+          transform: scale(1, 1);
+        }
+        30% {
+          transform: scale(1.18, 0.82);
+        }
+        55% {
+          transform: scale(0.9, 1.12);
+        }
+        75% {
+          transform: scale(1.05, 0.96);
+        }
+        100% {
+          transform: scale(1, 1);
+        }
       }
 
       @media (min-width: 769px) {
@@ -932,7 +955,7 @@
 
         document
           .querySelectorAll(
-            ".letter:not(.space), .controls button, .modal-close, a, .copy-btn",
+            ".letter:not(.space), .controls button, .modal-close, a, .copy-btn, .banana-gif",
           )
           .forEach((el) => {
             el.addEventListener("pointerenter", (e) => {
@@ -1082,6 +1105,29 @@
         }
       }
 
+      // Comedic "boing" for the banana — pitch dips then bounces back up
+      function bananaBoing() {
+        try {
+          const ac = getAudioCtx();
+          const now = ac.currentTime;
+          const osc = ac.createOscillator();
+          const gain = ac.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(700, now);
+          osc.frequency.exponentialRampToValueAtTime(140, now + 0.28);
+          osc.frequency.exponentialRampToValueAtTime(420, now + 0.42);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.28, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.48);
+          osc.connect(gain);
+          gain.connect(ac.destination);
+          osc.start(now);
+          osc.stop(now + 0.48);
+        } catch (err) {
+          /* audio not available — fail silently */
+        }
+      }
+
       function popLetter(l, index, withImpulse) {
         if (l.isSpace) return;
         pluck(scale[index % scale.length]);
@@ -1129,7 +1175,8 @@
             e.target.closest(".modal-card") ||
             e.target.closest(".controls") ||
             e.target.closest(".topbar") ||
-            e.target.closest(".modal-overlay")
+            e.target.closest(".modal-overlay") ||
+            e.target.closest(".banana-gif")
           )
             return;
 
@@ -1209,6 +1256,20 @@
           setTimeout(() => popLetter(l, i, false), i * 35);
         });
       });
+
+      // ---------- Banana click ----------
+      if (bananaGif) {
+        bananaGif.addEventListener("click", () => {
+          bananaBoing();
+          bananaGif.classList.remove("squish");
+          void bananaGif.offsetWidth; // restart animation if clicked rapidly
+          bananaGif.classList.add("squish");
+        });
+        bananaGif.addEventListener("animationend", (e) => {
+          if (e.animationName === "bananaSquish")
+            bananaGif.classList.remove("squish");
+        });
+      }
 
       // ---------- Modal ----------
       const modalOverlay = document.getElementById("modalOverlay");
