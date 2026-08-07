@@ -251,6 +251,22 @@
         }
       }
 
+      /* ---------- Hero (banana + text) ---------- */
+      .hero {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .text-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
       #phrase {
         position: relative;
         z-index: 3;
@@ -663,6 +679,72 @@
           margin-top: -350px; /* adjust if needed */
         }
       }
+
+      /* =========================================================
+         Tablet only (portrait + landscape iPad-style widths).
+         Mobile (<700px) and desktop (>1180px) are untouched above.
+         ========================================================= */
+      @media (min-width: 700px) and (max-width: 1180px) {
+        /* Banana left, text right, vertically centered together */
+        .hero {
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+          gap: 2.5rem;
+        }
+
+        .text-col {
+          align-items: flex-start;
+        }
+
+        #phrase {
+          align-items: flex-start;
+          max-width: 340px;
+        }
+
+        .line {
+          justify-content: flex-start;
+          flex-wrap: wrap;
+        }
+
+        .subtitle {
+          text-align: left;
+          margin-top: 0.7rem;
+          max-width: 300px;
+        }
+
+        .letter {
+          font-size: clamp(2rem, 5vw, 3rem) !important;
+        }
+
+        .banana-gif {
+          width: 260px;
+          margin-top: 0;
+          margin-bottom: 0;
+        }
+
+        /* Top tagline: a touch bigger and better spaced so it doesn't
+           feel like an afterthought next to the wider hero */
+        .topbar {
+          top: calc(1.6rem + env(safe-area-inset-top));
+        }
+
+        .topbar footer {
+          font-size: 0.82rem;
+          letter-spacing: 0.02em;
+        }
+
+        /* Bottom controls: roomier tap targets, more breathing room */
+        .controls {
+          bottom: calc(2.8rem + env(safe-area-inset-bottom));
+          gap: 1.6rem 2.4rem;
+        }
+
+        .controls button {
+          font-size: 0.82rem;
+          padding: 0.6rem 0.3rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -677,16 +759,17 @@
       <footer>// drag a letter · tap for a note</footer>
     </div>
 
-    <div class="topbar">
-      <footer>// drag a letter · tap for a note</footer>
+    <div class="hero">
+      <img src="banana.gif" class="banana-gif" alt="Lana Banana" />
+
+      <div class="text-col">
+        <div id="phrase"></div>
+        <p class="subtitle">
+          lana backwards is what i did with your mom last night
+        </p>
+      </div>
     </div>
 
-    <img src="banana.gif" class="banana-gif" alt="Lana Banana" />
-
-    <div id="phrase"></div>
-    <p class="subtitle">
-      lana backwards is what i did with your mom last night
-    </p>
     <div class="controls">
       <button id="gravityBtn">git push --force</button>
       <button id="shuffleBtn">rm -rf *</button>
