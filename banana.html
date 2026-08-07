@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f3f3f1" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f7a5c'/%3E%3Ctext x='12' y='44' font-family='monospace' font-weight='bold' font-size='32' fill='%23fdfdfc'%3E%F0%9F%8D%8C%3C/text%3E%3C/svg%3E"
+    />
+    <title>Banana — Discord Bot</title>
+    <meta
+      name="description"
+      content="A fast, friendly, banana-themed Discord bot. Fun commands, moderation tools, and pure chaos energy."
+    />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Banana" />
+    <meta property="og:title" content="Banana — Discord Bot" />
+    <meta
+      property="og:description"
+      content="A fast, friendly, banana-themed Discord bot. Fun commands, moderation tools, and pure chaos energy."
+    />
+    <meta property="og:url" content="https://banana.lannna.ca/" />
+    <meta property="og:image" content="https://www.lannna.ca/preview.png" />
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Banana — Discord Bot" />
+    <meta
+      name="twitter:description"
+      content="A fast, friendly, banana-themed Discord bot. Fun commands, moderation tools, and pure chaos energy."
+    />
+    <meta name="twitter:image" content="https://www.lannna.ca/preview.png" />
+    <meta name="theme-color" content="#2f7a5c" />
+    <style>
+      :root {
+        --bg: #f3f3f1;
+        --card: #fdfdfc;
+        --ink: #1c1c1a;
+        --accent: #2f7a5c;
+        --dim: #8c8c86;
+        --line: #dcdcd6;
+        --mono:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, "Courier New",
+          monospace;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background: var(--bg);
+        overscroll-behavior: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      body {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: var(--mono);
+        cursor: none;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+      @media (hover: none), (pointer: coarse) {
+        body {
+          cursor: auto;
+        }
+        .cursor-box,
+        .cursor-caret {
+          display: none !important;
+        }
+      }
+      /* ---------- Background texture ---------- */
+      .dotgrid {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.045) 1px, transparent 1px);
+        background-size: 32px 32px;
+      }
+      .grain {
+        position: fixed;
+        inset: -50px;
+        z-index: 1;
+        pointer-events: none;
+        opacity: 0.03;
+        mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+      canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2;
+      }
+      /* ---------- Cursor ---------- */
+      .cursor-caret {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        pointer-events: none;
+        z-index: 8;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+        transition:
+          transform 0.15s ease,
+          opacity 0.15s ease;
+      }
+      .cursor-caret.ready {
+        opacity: 1;
+      }
+      .cursor-caret.active {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0.6;
+      }
+      .cursor-box {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(28, 28, 26, 0.28);
+        pointer-events: none;
+        z-index: 7;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+        transition:
+          width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          border-color 0.25s ease,
+          background-color 0.25s ease,
+          opacity 0.2s ease;
+      }
+      .cursor-box.ready {
+        opacity: 1;
+      }
+      .cursor-box.hover {
+        width: 56px;
+        height: 56px;
+        border-color: rgba(47, 122, 92, 0.55);
+        background-color: rgba(47, 122, 92, 0.06);
+      }
+      .cursor-box.active {
+        width: 22px;
+        height: 22px;
+        border-color: rgba(47, 122, 92, 0.9);
+      }
+      /* ---------- Layout ---------- */
+      .page {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        max-width: 720px;
+        padding: 2.4rem 1.4rem 4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2.4rem;
+      }
+      /* ---------- Top bar ---------- */
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        text-decoration: none;
+        color: var(--ink);
+        font-size: 0.82rem;
+        letter-spacing: 0.02em;
+      }
+      .brand-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+      }
+      .top-links {
+        display: flex;
+        gap: 1.1rem;
+      }
+      .top-links a {
+        font-size: 0.72rem;
+        color: var(--dim);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition:
+          color 0.2s ease,
+          border-color 0.2s ease;
+      }
+      .top-links a:hover,
+      .top-links a:focus-visible {
+        color: var(--ink);
+        border-color: var(--dim);
+      }
+      /* ---------- Hero ---------- */
+      .hero {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.1rem;
+      }
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.7rem;
+        color: var(--dim);
+        letter-spacing: 0.03em;
+      }
+      .hero-badge::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: pulse 2s ease infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(2.4rem, 9vw, 3.6rem);
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+        line-height: 1.05;
+      }
+      h1 span {
+        color: var(--accent);
+      }
+      .subtitle {
+        margin: 0;
+        font-size: 0.86rem;
+        line-height: 1.65;
+        color: var(--dim);
+        max-width: 34rem;
+      }
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0.4rem;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        letter-spacing: 0.01em;
+        text-decoration: none;
+        padding: 0.65rem 1.1rem;
+        border-radius: 5px;
+        border: 1px solid transparent;
+        transition:
+          background 0.2s ease,
+          color 0.2s ease,
+          border-color 0.2s ease,
+          transform 0.15s ease;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fdfdfc;
+        border-color: var(--accent);
+      }
+      .btn-primary:hover,
+      .btn-primary:focus-visible {
+        background: #266a4f;
+        border-color: #266a4f;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--ink);
+        border-color: var(--line);
+      }
+      .btn-ghost:hover,
+      .btn-ghost:focus-visible {
+        border-color: var(--dim);
+        background: rgba(0, 0, 0, 0.02);
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      /* ---------- Cards ---------- */
+      .section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+      }
+      .section-label {
+        font-size: 0.7rem;
+        letter-spacing: 0.04em;
+        color: var(--dim);
+        text-transform: uppercase;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 1.25rem 1.35rem;
+      }
+      .card-title {
+        margin: 0 0 0.55rem;
+        font-size: 0.82rem;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .card-title .prefix {
+        color: var(--accent);
+        opacity: 0.8;
+      }
+      .cmd-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .cmd {
+        display: inline-block;
+        font-size: 0.74rem;
+        color: var(--ink);
+        background: rgba(47, 122, 92, 0.07);
+        border: 1px solid rgba(47, 122, 92, 0.14);
+        border-radius: 4px;
+        padding: 0.22rem 0.5rem;
+        letter-spacing: 0.01em;
+      }
+      .about-text {
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.7;
+        color: var(--ink);
+      }
+      .about-text .dim {
+        color: var(--dim);
+      }
+      .about-meta {
+        margin-top: 0.9rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid var(--line);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 1.6rem;
+        font-size: 0.72rem;
+        color: var(--dim);
+      }
+      .about-meta strong {
+        color: var(--ink);
+        font-weight: 400;
+      }
+      /* ---------- Footer ---------- */
+      footer {
+        margin-top: 0.5rem;
+        padding-top: 1.4rem;
+        border-top: 1px solid var(--line);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.8rem;
+        font-size: 0.7rem;
+        color: var(--dim);
+      }
+      footer a {
+        color: var(--dim);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition:
+          color 0.2s ease,
+          border-color 0.2s ease;
+      }
+      footer a:hover {
+        color: var(--ink);
+        border-color: var(--dim);
+      }
+      /* ---------- Responsive ---------- */
+      @media (max-width: 480px) {
+        .page {
+          padding: 1.6rem 1.1rem 3.2rem;
+          gap: 1.9rem;
+        }
+        .top-links {
+          gap: 0.8rem;
+        }
+        h1 {
+          font-size: clamp(2.1rem, 11vw, 2.8rem);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dotgrid"></div>
+    <div class="grain"></div>
+    <canvas id="trail"></canvas>
+    <div class="cursor-box" id="ring"></div>
+    <div class="cursor-caret" id="dot"></div>
+
+    <div class="page">
+      <!-- Top -->
+      <div class="topbar">
+        <a class="brand" href="https://www.lannna.ca/">
+          <span class="brand-dot"></span>
+          <span>lannna.ca</span>
+        </a>
+        <div class="top-links">
+          <a href="https://discord.gg/ucTZH4qEgT" target="_blank" rel="noopener"
+            >support</a
+          >
+          <a
+            href="https://github.com/bluenotthecolor"
+            target="_blank"
+            rel="noopener"
+            >github</a
+          >
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <section class="hero">
+        <div class="hero-badge">online · discord.py 2.7.1</div>
+        <h1>Banana <span>bot</span></h1>
+        <p class="subtitle">
+          A fast, friendly, banana-themed Discord bot owned by
+          <strong style="color: var(--ink); font-weight: 400"
+            >bluenotthecolor</strong
+          >. Fun commands, solid moderation, and zero attitude.
+        </p>
+        <div class="cta-row">
+          <!-- REPLACE THIS HREF with your real invite link -->
+          <a
+            class="btn btn-primary"
+            href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=8&scope=bot%20applications.commands"
+            target="_blank"
+            rel="noopener"
+          >
+            <span>🍌</span> Invite Me
+          </a>
+          <a
+            class="btn btn-ghost"
+            href="https://discord.gg/ucTZH4qEgT"
+            target="_blank"
+            rel="noopener"
+          >
+            Support Server
+          </a>
+        </div>
+      </section>
+
+      <!-- About -->
+      <section class="section">
+        <div class="section-label">// about</div>
+        <div class="card">
+          <p class="about-text">
+            Prefix: <code style="color: var(--accent)">b!</code> — every command
+            also works as a
+            <code style="color: var(--accent)">/slash</code> command.<br />
+            Use
+            <code style="color: var(--accent)">b!help &lt;command&gt;</code> or
+            <code style="color: var(--accent)"
+              >/help command:&lt;command&gt;</code
+            >
+            for details.
+          </p>
+          <div class="about-meta">
+            <span>owner <strong>bluenotthecolor</strong></span>
+            <span>stack <strong>discord.py</strong></span>
+            <span>vibe <strong>friendly chaos</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Commands -->
+      <section class="section">
+        <div class="section-label">// commands</div>
+
+        <div class="card">
+          <h3 class="card-title"><span class="prefix">$</span> Fun</h3>
+          <div class="cmd-grid">
+            <span class="cmd">banana</span>
+            <span class="cmd">cat</span>
+            <span class="cmd">dadjoke</span>
+            <span class="cmd">urban</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title"><span class="prefix">$</span> Info</h3>
+          <div class="cmd-grid">
+            <span class="cmd">about</span>
+            <span class="cmd">channelinfo</span>
+            <span class="cmd">help</span>
+            <span class="cmd">ping</span>
+            <span class="cmd">roleinfo</span>
+            <span class="cmd">serverinfo</span>
+            <span class="cmd">userinfo</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title"><span class="prefix">$</span> Moderation</h3>
+          <div class="cmd-grid">
+            <span class="cmd">ban</span>
+            <span class="cmd">kick</span>
+            <span class="cmd">lock</span>
+            <span class="cmd">mute</span>
+            <span class="cmd">nickname</span>
+            <span class="cmd">purge</span>
+            <span class="cmd">unlock</span>
+            <span class="cmd">unmute</span>
+            <span class="cmd">warn</span>
+            <span class="cmd">warnings</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer>
+        <span>// built by bluenotthecolor</span>
+        <span>
+          <a href="https://www.lannna.ca/">main site</a>
+          ·
+          <a href="https://discord.gg/ucTZH4qEgT">support</a>
+        </span>
+      </footer>
+    </div>
+
+    <script>
+      const isCoarsePointer = window.matchMedia(
+        "(hover: none), (pointer: coarse)",
+      ).matches;
+
+      let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+      // ---------- Cursor ----------
+      const dot = document.getElementById("dot");
+      const ring = document.getElementById("ring");
+      let ringPos = { x: mouse.x, y: mouse.y };
+      let cursorReady = false;
+
+      if (!isCoarsePointer) {
+        window.addEventListener("pointermove", (e) => {
+          if (e.pointerType && e.pointerType !== "mouse") return;
+          mouse.x = e.clientX;
+          mouse.y = e.clientY;
+          dot.style.left = e.clientX + "px";
+          dot.style.top = e.clientY + "px";
+          if (!cursorReady) {
+            cursorReady = true;
+            ringPos.x = e.clientX;
+            ringPos.y = e.clientY;
+            ring.style.left = e.clientX + "px";
+            ring.style.top = e.clientY + "px";
+            dot.classList.add("ready");
+            ring.classList.add("ready");
+          }
+        });
+
+        document.querySelectorAll("a, .btn, .cmd").forEach((el) => {
+          el.addEventListener("pointerenter", (e) => {
+            if (e.pointerType === "mouse") ring.classList.add("hover");
+          });
+          el.addEventListener("pointerleave", (e) => {
+            if (e.pointerType === "mouse") ring.classList.remove("hover");
+          });
+        });
+
+        window.addEventListener("pointerdown", (e) => {
+          if (e.pointerType === "mouse") {
+            ring.classList.add("active");
+            dot.classList.add("active");
+          }
+        });
+        window.addEventListener("pointerup", () => {
+          ring.classList.remove("active");
+          dot.classList.remove("active");
+        });
+      }
+
+      window.addEventListener(
+        "pointermove",
+        (e) => {
+          mouse.x = e.clientX;
+          mouse.y = e.clientY;
+        },
+        { passive: true },
+      );
+
+      // ---------- Minimal pixel trail ----------
+      const trailCanvas = document.getElementById("trail");
+      const trailCtx = trailCanvas.getContext("2d");
+      let W, H, DPR;
+
+      function resizeCanvas() {
+        DPR = Math.min(window.devicePixelRatio || 1, 2);
+        W = window.innerWidth;
+        H = window.innerHeight;
+        trailCanvas.width = W * DPR;
+        trailCanvas.height = H * DPR;
+        trailCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      }
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      const trailParticles = [];
+      const MAX_TRAIL = isCoarsePointer ? 40 : 140;
+      let lastTX = null,
+        lastTY = null;
+
+      window.addEventListener(
+        "pointermove",
+        (e) => {
+          const x = e.clientX,
+            y = e.clientY;
+          if (lastTX !== null) {
+            const dist = Math.hypot(x - lastTX, y - lastTY);
+            if (
+              dist > 6 &&
+              Math.random() < 0.55 &&
+              trailParticles.length < MAX_TRAIL
+            ) {
+              trailParticles.push({
+                x,
+                y,
+                vx: (Math.random() - 0.5) * 0.15,
+                vy: (Math.random() - 0.5) * 0.15,
+                life: 1,
+                size: Math.random() * 2 + 1.8,
+              });
+            }
+          }
+          lastTX = x;
+          lastTY = y;
+        },
+        { passive: true },
+      );
+
+      function drawTrail() {
+        trailCtx.clearRect(0, 0, W, H);
+        for (let i = trailParticles.length - 1; i >= 0; i--) {
+          const p = trailParticles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.045;
+          if (p.life <= 0) {
+            trailParticles.splice(i, 1);
+            continue;
+          }
+          trailCtx.fillStyle = `rgba(47,122,92,${p.life * 0.32})`;
+          const s = p.size * p.life;
+          trailCtx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+        }
+      }
+
+      function tick() {
+        if (!isCoarsePointer && cursorReady) {
+          ringPos.x += (mouse.x - ringPos.x) * 0.18;
+          ringPos.y += (mouse.y - ringPos.y) * 0.18;
+          ring.style.left = ringPos.x + "px";
+          ring.style.top = ringPos.y + "px";
+        }
+        drawTrail();
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    </script>
+  </body>
+</html>
