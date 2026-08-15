@@ -1,0 +1,149 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0 20px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 0 80px;
+}
+
+header {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 0;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+header .brand {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+header .brand img {
+  height: 22px;
+  width: 22px;
+}
+
+nav a {
+  margin-left: 16px;
+  font-size: 14px;
+  color: #555;
+}
+
+nav a:hover {
+  color: #1a1a1a;
+}
+
+h1 {
+  font-size: 24px;
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 16px;
+  margin: 32px 0 12px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 6px;
+}
+
+p {
+  color: #333;
+}
+
+.tagline {
+  color: #555;
+  margin: 0 0 24px;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid #1a1a1a;
+  color: #1a1a1a;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.btn:hover {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid #eee;
+  vertical-align: top;
+}
+
+th {
+  color: #888;
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: #f2f2f2;
+  padding: 1px 5px;
+}
+
+footer {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 0 40px;
+  border-top: 1px solid #ddd;
+  color: #888;
+  font-size: 13px;
+}
+
+footer a {
+  color: #888;
+}
+
+ol,
+ul {
+  color: #333;
+  padding-left: 20px;
+}
+
+li {
+  margin-bottom: 6px;
+}
