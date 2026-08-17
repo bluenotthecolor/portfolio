@@ -7,6 +7,12 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#f3f3f1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="icon"
       type="image/svg+xml"
@@ -53,6 +59,15 @@
     <!-- Discord -->
     <meta name="theme-color" content="#2f7a5c" />
     <title>~$</title>
+
+    <!-- Pixel font for the hero letters, matches the pixel-art favicon -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
       :root {
         --bg: #f3f3f1;
@@ -64,6 +79,7 @@
         --mono:
           "SFMono-Regular", Consolas, "Liberation Mono", Menlo, "Courier New",
           monospace;
+        --pixel: "Press Start 2P", var(--mono);
       }
 
       * {
@@ -77,9 +93,6 @@
         padding: 0;
         height: 100%;
         background: var(--bg);
-        overflow: hidden;
-        overscroll-behavior: none;
-        touch-action: none;
         -webkit-user-select: none;
         user-select: none;
         -webkit-touch-callout: none;
@@ -87,15 +100,8 @@
 
       body {
         position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
         font-family: var(--mono);
         cursor: none;
-        /* iOS/Android safe areas (notches, home indicator) */
-        padding: env(safe-area-inset-top) env(safe-area-inset-right)
-          env(safe-area-inset-bottom) env(safe-area-inset-left);
       }
 
       /* Only fine-pointer (mouse/trackpad) devices get the faux cursor */
@@ -107,6 +113,30 @@
         .cursor-caret {
           display: none !important;
         }
+      }
+
+      /* ---------- Scroll container / snap sections ---------- */
+      .snap-container {
+        height: 100vh;
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+        overscroll-behavior-y: none;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .snap-section {
+        height: 100vh;
+        width: 100%;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        padding: 2rem 1rem;
+        overflow: hidden;
       }
 
       /* ---------- Background texture ---------- */
@@ -235,6 +265,7 @@
         gap: 0.5rem;
         padding: 0 1rem;
         text-align: center;
+        transition: opacity 0.3s ease;
       }
 
       footer {
@@ -298,7 +329,9 @@
 
       .letter {
         display: inline-block;
-        font-size: clamp(1.5rem, 9vw, 3.2rem);
+        font-family: var(--pixel);
+        font-size: clamp(0.85rem, 6.4vw, 1.9rem);
+        line-height: 1.6;
         color: var(--ink);
         cursor: grab;
         will-change: transform;
@@ -309,7 +342,7 @@
       /* Tablet / small-desktop step so it doesn't get oversized */
       @media (min-width: 480px) {
         .letter {
-          font-size: clamp(1.8rem, 6vw, 3.2rem);
+          font-size: clamp(1rem, 4vw, 1.9rem);
         }
       }
 
@@ -337,10 +370,25 @@
         right: 0;
         display: flex;
         justify-content: center;
+        align-items: center;
         flex-wrap: wrap;
-        gap: 1.2rem 1.4rem;
-        padding: 0 1rem;
+        gap: 0.9rem 0;
+        padding: 1.1rem 1rem 0;
         z-index: 5;
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
+      }
+
+      .controls::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 34px;
+        height: 1px;
+        background: var(--line);
       }
 
       .controls button {
@@ -348,13 +396,16 @@
         border: none;
         font-family: var(--mono);
         font-size: 0.72rem;
-        letter-spacing: 0.01em;
+        letter-spacing: 0.02em;
         color: var(--dim);
         cursor: pointer;
-        padding: 0.5rem 0.2rem;
+        padding: 0.5rem 0.85rem;
+        margin: 0 0.15rem;
+        border-radius: 4px;
         border-bottom: 1px solid transparent;
         transition:
           color 0.2s ease,
+          background-color 0.2s ease,
           border-color 0.2s ease;
         white-space: nowrap;
         touch-action: manipulation;
@@ -371,16 +422,178 @@
       .controls button:hover,
       .controls button:focus-visible {
         color: var(--ink);
+        background-color: rgba(28, 28, 26, 0.04);
         border-color: var(--dim);
       }
 
       @media (max-width: 420px) {
         .controls {
-          gap: 0.9rem 1rem;
+          gap: 0.6rem 0;
           bottom: calc(1.6rem + env(safe-area-inset-bottom));
         }
         .controls button {
           font-size: 0.66rem;
+          padding: 0.45rem 0.6rem;
+        }
+      }
+
+      /* ---------- Scroll hint ---------- */
+      .scroll-hint {
+        position: absolute;
+        bottom: calc(7.2rem + env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--dim);
+        opacity: 0.65;
+        cursor: pointer;
+        z-index: 5;
+        background: none;
+        border: none;
+        padding: 0.4rem;
+        animation: hintBounce 2.4s ease-in-out infinite;
+      }
+
+      .scroll-hint svg {
+        color: var(--accent);
+        opacity: 0.85;
+      }
+
+      .scroll-hint:hover {
+        opacity: 1;
+      }
+
+      @keyframes hintBounce {
+        0%,
+        100% {
+          transform: translate(-50%, 0);
+        }
+        50% {
+          transform: translate(-50%, 4px);
+        }
+      }
+
+      @media (max-width: 420px) {
+        .scroll-hint {
+          bottom: calc(6rem + env(safe-area-inset-bottom));
+        }
+      }
+
+      /* Reversed hint used at the top of section 2, pointing back up */
+      .scroll-hint-up {
+        top: calc(1.7rem + env(safe-area-inset-top));
+        bottom: auto;
+        animation-name: hintBounceUp;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      @keyframes hintBounceUp {
+        0%,
+        100% {
+          transform: translate(-50%, 0);
+        }
+        50% {
+          transform: translate(-50%, -4px);
+        }
+      }
+
+      /* ---------- About me (clean, professional — distinct from the terminal hero) ---------- */
+      :root {
+        --sans:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+      }
+
+      .about-wrap {
+        width: 100%;
+        max-width: 760px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3rem;
+        z-index: 3;
+        font-family: var(--sans);
+      }
+
+      .about-heading {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .about-eyebrow {
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0;
+      }
+
+      .about-heading h2 {
+        margin: 0;
+        font-size: clamp(1.4rem, 3.6vw, 1.9rem);
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+
+      .about-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0;
+        width: 100%;
+        border-top: 1px solid var(--line);
+      }
+
+      .about-block {
+        padding: 2rem 1.6rem;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+      }
+
+      .about-block:last-child {
+        border-right: none;
+      }
+
+      .about-block h3 {
+        margin: 0 0 1.1rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+
+      .about-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .about-list li {
+        font-size: 0.98rem;
+        line-height: 1.5;
+        color: var(--ink);
+        font-weight: 400;
+      }
+
+      @media (max-width: 560px) {
+        .about-block {
+          border-right: none;
         }
       }
 
@@ -714,7 +927,7 @@
         }
 
         .letter {
-          font-size: clamp(2rem, 5vw, 3rem) !important;
+          font-size: clamp(1.15rem, 3vw, 1.7rem) !important;
         }
 
         .banana-gif {
@@ -755,22 +968,76 @@
     <div class="cursor-box" id="ring"></div>
     <div class="cursor-caret" id="dot"></div>
 
-    <div class="topbar">
-      <footer>// drag a letter · tap for a note</footer>
+    <div class="topbar" id="topbar">
+      <footer>// drag a letter · tap for a note · scroll for more</footer>
     </div>
 
-    <div class="hero">
-      <img src="banana.gif" class="banana-gif" alt="Lana Banana" />
+    <div class="snap-container" id="snapContainer">
+      <!-- ===== Section 1: Hero ===== -->
+      <section class="snap-section" id="hero-section">
+        <div class="hero">
+          <img src="banana.gif" class="banana-gif" alt="Lana Banana" />
 
-      <div class="text-col">
-        <div id="phrase"></div>
-        <p class="subtitle">
-          lana backwards is what i did with your mom last night
-        </p>
-      </div>
-    </div>
+          <div class="text-col">
+            <div id="phrase"></div>
+            <p class="subtitle">
+              lana backwards is what i did with your mom last night
+            </p>
+          </div>
+        </div>
 
-    <div class="controls">
+        <button
+          class="scroll-hint"
+          id="scrollHint"
+          aria-label="Scroll to next section"
+        >
+          <span>scroll</span>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M3 6l5 5 5-5"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </section>
+
+      <!-- ===== Section 2: Pixel art ===== -->
+      <section class="snap-section" id="section-two">
+        <button
+          class="scroll-hint scroll-hint-up"
+          id="scrollHintUp"
+          aria-label="Scroll back to top"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M3 10l5-5 5 5"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span>scroll</span>
+        </button>
+
+
+
+    <div class="controls" id="controls">
       <button id="gravityBtn">git push --force</button>
       <button id="shuffleBtn">rm -rf *</button>
       <button id="noteBtn">cat readme.md</button>
@@ -786,15 +1053,14 @@
           &times;
         </button>
         <div class="modal-body">
-          <p class="comment">// a note from the build</p>
+          <p class="comment">// txt from lana</p>
           <p class="line1">
             <span class="kw">const</span> me =
-            <span class="str">"full-stack developer"</span>;
+            <span class="str">"dev, artist, yurilover :3"</span>;
           </p>
           <p class="line1"><span class="fn">console</span>.log(me);</p>
           <p class="comment" style="margin-top: 1rem">
-            I'm your friendly developer, DMs always open feel free to talk about
-            anything.
+            Just DM me if you wanna talk, i don't bite (or do i?)
           </p>
           <div class="modal-links">
             <div class="modal-link-row">
@@ -1014,6 +1280,54 @@
       window.addEventListener("resize", handleResize);
       window.addEventListener("orientationchange", handleResize);
 
+      // ---------- Scroll container / chrome visibility ----------
+      const snapContainer = document.getElementById("snapContainer");
+      const controlsEl = document.getElementById("controls");
+      const topbarEl = document.getElementById("topbar");
+      const scrollHintEl = document.getElementById("scrollHint");
+      const scrollHintUpEl = document.getElementById("scrollHintUp");
+      const heroSection = document.getElementById("hero-section");
+      const nextSection = document.getElementById("section-two");
+
+      function inHeroView() {
+        return snapContainer.scrollTop < window.innerHeight * 0.5;
+      }
+
+      function updateChrome() {
+        const hero = inHeroView();
+        controlsEl.style.opacity = hero ? "1" : "0";
+        controlsEl.style.pointerEvents = hero ? "auto" : "none";
+        topbarEl.style.opacity = hero ? "1" : "0";
+        scrollHintEl.style.opacity = hero ? "0.65" : "0";
+        scrollHintEl.style.pointerEvents = hero ? "auto" : "none";
+        if (scrollHintUpEl) {
+          scrollHintUpEl.style.opacity = hero ? "0" : "0.65";
+          scrollHintUpEl.style.pointerEvents = hero ? "none" : "auto";
+        }
+      }
+      snapContainer.addEventListener("scroll", updateChrome, {
+        passive: true,
+      });
+      updateChrome();
+
+      scrollHintEl.addEventListener("click", () => {
+        nextSection.scrollIntoView({ behavior: "smooth" });
+      });
+
+      scrollHintUpEl?.addEventListener("click", () => {
+        heroSection.scrollIntoView({ behavior: "smooth" });
+      });
+
+      // Re-measure letter positions after any snap-driven layout shift
+      snapContainer.addEventListener(
+        "scroll",
+        () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(measure, 120);
+        },
+        { passive: true },
+      );
+
       // ---------- Cursor (skipped entirely on touch devices) ----------
       const dot = document.getElementById("dot");
       const ring = document.getElementById("ring");
@@ -1038,7 +1352,7 @@
 
         document
           .querySelectorAll(
-            ".letter:not(.space), .controls button, .modal-close, a, .copy-btn, .banana-gif",
+            ".letter:not(.space), .controls button, .modal-close, a, .copy-btn, .banana-gif, .scroll-hint",
           )
           .forEach((el) => {
             el.addEventListener("pointerenter", (e) => {
@@ -1254,12 +1568,17 @@
       window.addEventListener(
         "pointerdown",
         (e) => {
+          // Only pick up letters while the hero section is in view —
+          // otherwise dragging fights with scrolling to the next section.
+          if (!inHeroView()) return;
+
           if (
             e.target.closest(".modal-card") ||
             e.target.closest(".controls") ||
             e.target.closest(".topbar") ||
             e.target.closest(".modal-overlay") ||
-            e.target.closest(".banana-gif")
+            e.target.closest(".banana-gif") ||
+            e.target.closest(".scroll-hint")
           )
             return;
 
@@ -1453,7 +1772,7 @@
           const mdx = curX - mouse.x;
           const mdy = curY - mouse.y;
           const dist = Math.hypot(mdx, mdy);
-          if (dist < REPEL_RADIUS && dist > 0.01) {
+          if (dist < REPEL_RADIUS && dist > 0.01 && inHeroView()) {
             const force =
               ((1 - dist / REPEL_RADIUS) * REPEL_STRENGTH) / (dist * 10);
             ax += (mdx / dist) * force;
