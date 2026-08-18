@@ -440,7 +440,7 @@
       /* ---------- Scroll hint ---------- */
       .scroll-hint {
         position: absolute;
-        bottom: calc(7.2rem + env(safe-area-inset-bottom));
+        bottom: calc(4rem + env(safe-area-inset-bottom));
         left: 50%;
         transform: translateX(-50%);
         display: flex;
@@ -482,7 +482,8 @@
 
       @media (max-width: 420px) {
         .scroll-hint {
-          bottom: calc(6rem + env(safe-area-inset-bottom));
+          font-size: 0.56rem;
+          bottom: calc(1.5rem + env(safe-area-inset-bottom));
         }
       }
 
@@ -969,7 +970,7 @@
     <div class="cursor-caret" id="dot"></div>
 
     <div class="topbar" id="topbar">
-      <footer>// drag a letter · tap for a note · scroll for more</footer>
+      <footer>// drag a letter · poke my banana · scroll for more</footer>
     </div>
 
     <div class="snap-container" id="snapContainer">
@@ -1034,14 +1035,6 @@
           </svg>
           <span>scroll</span>
         </button>
-
-
-
-    <div class="controls" id="controls">
-      <button id="gravityBtn">git push --force</button>
-      <button id="shuffleBtn">rm -rf *</button>
-      <button id="noteBtn">cat readme.md</button>
-    </div>
 
     <div class="modal-overlay" id="modalOverlay">
       <div class="modal-card">
@@ -1282,7 +1275,6 @@
 
       // ---------- Scroll container / chrome visibility ----------
       const snapContainer = document.getElementById("snapContainer");
-      const controlsEl = document.getElementById("controls");
       const topbarEl = document.getElementById("topbar");
       const scrollHintEl = document.getElementById("scrollHint");
       const scrollHintUpEl = document.getElementById("scrollHintUp");
@@ -1295,8 +1287,6 @@
 
       function updateChrome() {
         const hero = inHeroView();
-        controlsEl.style.opacity = hero ? "1" : "0";
-        controlsEl.style.pointerEvents = hero ? "auto" : "none";
         topbarEl.style.opacity = hero ? "1" : "0";
         scrollHintEl.style.opacity = hero ? "0.65" : "0";
         scrollHintEl.style.pointerEvents = hero ? "auto" : "none";
@@ -1642,23 +1632,6 @@
       window.addEventListener("pointerup", endDrag);
       window.addEventListener("pointercancel", endDrag);
 
-      // ---------- Buttons ----------
-      const gravityBtn = document.getElementById("gravityBtn");
-      gravityBtn.addEventListener("click", () => {
-        gravityOn = !gravityOn;
-        gravityBtn.textContent = gravityOn ? "git revert" : "git push --force";
-      });
-
-      const shuffleBtn = document.getElementById("shuffleBtn");
-      shuffleBtn.addEventListener("click", () => {
-        letters.forEach((l, i) => {
-          if (l.isSpace) return;
-          l.vx += (Math.random() - 0.5) * 14;
-          l.vy += (Math.random() - 0.5) * 14 - 4;
-          setTimeout(() => popLetter(l, i, false), i * 35);
-        });
-      });
-
       // ---------- Banana click ----------
       if (bananaGif) {
         bananaGif.addEventListener("click", () => {
@@ -1675,7 +1648,6 @@
 
       // ---------- Modal ----------
       const modalOverlay = document.getElementById("modalOverlay");
-      const noteBtn = document.getElementById("noteBtn");
       const modalClose = document.getElementById("modalClose");
 
       function openModal() {
@@ -1685,7 +1657,6 @@
         modalOverlay.classList.remove("active");
       }
 
-      noteBtn.addEventListener("click", openModal);
       modalClose.addEventListener("click", closeModal);
       modalOverlay.addEventListener("click", (e) => {
         if (e.target === modalOverlay) closeModal();
