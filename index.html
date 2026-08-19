@@ -100,6 +100,15 @@
         -webkit-touch-callout: none;
       }
 
+      /* Native scrollbars are hidden site-wide — the custom pixel meter
+         (.pixel-meter) is the visual scroll indicator instead. */
+      * {
+        scrollbar-width: none;
+      }
+      *::-webkit-scrollbar {
+        display: none;
+      }
+
       body {
         position: relative;
         font-family: var(--mono);
@@ -448,6 +457,89 @@
         }
       }
 
+      /* ---------- Pixel meter (custom scroll indicator) ----------
+         Retro "life bar" style readout that replaces the native
+         scrollbar: a stack of blocky segments that fill in with the
+         accent color as you scroll, plus a little blinking terminal
+         caret riding at the current position. */
+      .pixel-meter {
+        position: fixed;
+        top: 50%;
+        right: calc(0.9rem + env(safe-area-inset-right));
+        transform: translateY(-50%);
+        z-index: 6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 10px 6px;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      .pixel-meter-seg {
+        width: 9px;
+        height: 15px;
+        background: transparent;
+        border: 1.5px solid var(--line);
+        transition:
+          background-color 0.15s ease,
+          border-color 0.15s ease,
+          transform 0.15s ease;
+      }
+
+      .pixel-meter-seg.filled {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .pixel-meter-seg.current {
+        border-color: var(--accent);
+        transform: scaleX(1.35);
+      }
+
+      .pixel-meter:hover .pixel-meter-seg {
+        border-color: var(--dim);
+      }
+
+      .pixel-meter:hover .pixel-meter-seg.filled,
+      .pixel-meter:hover .pixel-meter-seg.current {
+        border-color: var(--accent);
+      }
+
+      .pixel-meter-caret {
+        margin-top: 2px;
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        letter-spacing: 0.02em;
+        color: var(--accent);
+        animation: caretBlink 1.1s step-end infinite;
+        user-select: none;
+      }
+
+      @keyframes caretBlink {
+        0%,
+        49% {
+          opacity: 1;
+        }
+        50%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .pixel-meter {
+          right: calc(0.5rem + env(safe-area-inset-right));
+          gap: 3px;
+          padding: 8px 4px;
+        }
+        .pixel-meter-seg {
+          width: 7px;
+          height: 12px;
+        }
+      }
+
       /* ---------- Scroll hint ---------- */
       .scroll-hint {
         position: absolute;
@@ -689,93 +781,6 @@
           top: 40%;
           right: 5%;
         }
-      }
-
-      /* ---------- Project card (section two) ---------- */
-      .project-card {
-        position: relative;
-        z-index: 3;
-        width: 100%;
-        max-width: 360px;
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
-        font-family: var(--mono);
-        overflow: hidden;
-      }
-
-      .project-titlebar {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        padding: 0.6rem 0.8rem;
-        background: #ececea;
-        border-bottom: 1px solid var(--line);
-        font-size: 0.7rem;
-        color: var(--dim);
-      }
-
-      .project-titlebar .dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        background: #d9d5cf;
-      }
-
-      .project-body {
-        padding: 1.6rem 1.6rem 1.8rem;
-      }
-
-      .project-name {
-        margin: 0 0 0.45rem;
-        font-size: 1rem;
-        font-weight: 400;
-        letter-spacing: 0.01em;
-        color: var(--ink);
-      }
-
-      .project-desc {
-        margin: 0 0 1.4rem;
-        font-size: 0.78rem;
-        line-height: 1.5;
-        color: var(--dim);
-      }
-
-      .project-links {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-      }
-
-      .project-btn {
-        display: inline-flex;
-        align-items: center;
-        font-size: 0.7rem;
-        letter-spacing: 0.01em;
-        color: var(--ink);
-        text-decoration: none;
-        padding: 0.5rem 0.75rem;
-        border: 1px solid var(--line);
-        border-radius: 4px;
-        transition:
-          color 0.2s ease,
-          border-color 0.2s ease,
-          background-color 0.2s ease;
-        touch-action: manipulation;
-      }
-
-      .project-btn::before {
-        content: "$ ";
-        color: var(--accent);
-        opacity: 0.7;
-      }
-
-      .project-btn:hover,
-      .project-btn:focus-visible {
-        color: var(--accent);
-        border-color: var(--accent);
-        background-color: rgba(47, 122, 92, 0.06);
       }
 
       /* ---------- Modal ---------- */
@@ -1149,6 +1154,23 @@
     <div class="cursor-box" id="ring"></div>
     <div class="cursor-caret" id="dot"></div>
 
+    <div
+      class="pixel-meter"
+      id="pixelMeter"
+      aria-label="Scroll position"
+      role="slider"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div class="pixel-meter-seg" data-i="0"></div>
+      <div class="pixel-meter-seg" data-i="1"></div>
+      <div class="pixel-meter-seg" data-i="2"></div>
+      <div class="pixel-meter-seg" data-i="3"></div>
+      <div class="pixel-meter-seg" data-i="4"></div>
+      <div class="pixel-meter-seg" data-i="5"></div>
+      <div class="pixel-meter-caret" id="pixelMeterCaret">0%</div>
+    </div>
+
     <div class="topbar" id="topbar">
       <footer>// drag a letter · poke my banana · scroll for more</footer>
     </div>
@@ -1246,42 +1268,6 @@
           alt=""
           aria-hidden="true"
         />
-
-        <div class="project-card">
-          <div class="project-titlebar">
-            <span class="dot"></span>
-            <span>lana-bot</span>
-          </div>
-          <div class="project-body">
-            <h3 class="project-name">lana bot</h3>
-            <p class="project-desc">
-              sweet (useful) bot for your discord server
-            </p>
-            <div class="project-links">
-              <a
-                class="project-btn"
-                href="https://www.lannna.ca/lana"
-                target="_blank"
-                rel="noopener noreferrer"
-                >website</a
-              >
-              <a
-                class="project-btn"
-                href="https://discord.gg/B4SuQfKBTf"
-                target="_blank"
-                rel="noopener noreferrer"
-                >support server</a
-              >
-              <a
-                class="project-btn"
-                href="https://github.com/bluenotthecolor"
-                target="_blank"
-                rel="noopener noreferrer"
-                >github</a
-              >
-            </div>
-          </div>
-        </div>
 
         <div class="modal-overlay" id="modalOverlay">
           <div class="modal-card">
@@ -1549,6 +1535,54 @@
       });
       updateChrome();
 
+      // ---------- Pixel meter (custom scroll indicator) ----------
+      const pixelMeter = document.getElementById("pixelMeter");
+      const pixelMeterCaret = document.getElementById("pixelMeterCaret");
+      const pixelMeterSegs = pixelMeter
+        ? Array.from(pixelMeter.querySelectorAll(".pixel-meter-seg"))
+        : [];
+
+      function updatePixelMeter() {
+        if (!pixelMeter) return;
+        const max = snapContainer.scrollHeight - snapContainer.clientHeight;
+        const pct = max > 0 ? snapContainer.scrollTop / max : 0;
+        const filledCount = Math.round(pct * pixelMeterSegs.length);
+        const currentIndex = Math.min(
+          pixelMeterSegs.length - 1,
+          Math.floor(pct * pixelMeterSegs.length),
+        );
+        pixelMeterSegs.forEach((seg, i) => {
+          seg.classList.toggle("filled", i < filledCount);
+          seg.classList.toggle("current", i === currentIndex);
+        });
+        pixelMeterCaret.textContent = Math.round(pct * 100) + "%";
+        pixelMeter.setAttribute("aria-valuenow", Math.round(pct * 100));
+      }
+
+      snapContainer.addEventListener("scroll", updatePixelMeter, {
+        passive: true,
+      });
+      updatePixelMeter();
+      window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(updatePixelMeter, 120);
+      });
+
+      // Click/tap a segment to jump proportionally through the page
+      if (pixelMeter) {
+        pixelMeter.addEventListener("click", (e) => {
+          const seg = e.target.closest(".pixel-meter-seg");
+          if (!seg) return;
+          const idx = parseInt(seg.getAttribute("data-i"), 10);
+          const max = snapContainer.scrollHeight - snapContainer.clientHeight;
+          const targetPct = (idx + 0.5) / pixelMeterSegs.length;
+          snapContainer.scrollTo({
+            top: targetPct * max,
+            behavior: "smooth",
+          });
+        });
+      }
+
       scrollHintEl.addEventListener("click", () => {
         nextSection.scrollIntoView({ behavior: "smooth" });
       });
@@ -1591,7 +1625,7 @@
 
         document
           .querySelectorAll(
-            ".letter:not(.space), .controls button, .modal-close, a, .copy-btn, .banana-gif, .scroll-hint",
+            ".letter:not(.space), .controls button, .modal-close, a, .copy-btn, .banana-gif, .scroll-hint, .pixel-meter-seg",
           )
           .forEach((el) => {
             el.addEventListener("pointerenter", (e) => {
@@ -1817,7 +1851,8 @@
             e.target.closest(".topbar") ||
             e.target.closest(".modal-overlay") ||
             e.target.closest(".banana-gif") ||
-            e.target.closest(".scroll-hint")
+            e.target.closest(".scroll-hint") ||
+            e.target.closest(".pixel-meter")
           )
             return;
 
